@@ -57,3 +57,16 @@ background:linear-gradient(180deg,rgba(217,168,78,.08),rgba(217,168,78,.02))}
 .foot .motto{font-family:var(--serif);font-style:italic;text-transform:none;letter-spacing:.02em;font-size:1.15rem;color:var(--gold)}
 @media (min-width:700px){.wrap{padding-top:56px}.logo{width:300px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* 📍 Find us at (filled from the logistics app; hidden when nothing is confirmed) */
+.findus{margin-top:30px;padding:22px 18px 18px;border-radius:18px;border:1px solid rgba(217,168,78,.55);background:linear-gradient(160deg,rgba(217,168,78,.16),rgba(217,168,78,.03) 60%);box-shadow:inset 0 1px 0 rgba(246,220,142,.12)}
+.findus .section-title{text-align:center;margin-bottom:12px}
+.findus ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.findus li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:rgba(10,10,10,.55);border:1px solid rgba(217,168,78,.25)}
+.fu-date{flex:0 0 50px;height:50px;display:grid;place-content:center;text-align:center;border-radius:12px;border:1px solid rgba(217,168,78,.45);color:var(--gold);font-size:.62rem;letter-spacing:.14em;font-weight:700;line-height:1.05}
+.fu-date b{display:block;font-family:var(--serif);font-size:1.4rem;color:var(--bone);letter-spacing:0}
+.fu-body{flex:1;min-width:0;display:flex;flex-direction:column}
+.fu-name{font-weight:600;font-size:.92rem;color:var(--bone);line-height:1.25}
+.fu-meta{font-size:.76rem;color:var(--steel)}
+.fu-dir{flex:0 0 auto;font-size:.74rem;font-weight:700;color:#140f04;background:linear-gradient(180deg,var(--gold-hi),var(--gold));padding:8px 10px;border-radius:10px;text-decoration:none}
+.fu-dir:focus-visible{outline:3px solid var(--gold-hi);outline-offset:2px}
