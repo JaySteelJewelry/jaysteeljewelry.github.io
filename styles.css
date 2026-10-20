@@ -115,3 +115,32 @@ font-weight:600;font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;b
 .hq__btn{flex:0 0 auto;padding:11px 16px;border-radius:12px;background:var(--bone);color:var(--black);font-weight:700;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;text-decoration:none}
 .hq__btn:focus-visible{outline:3px solid var(--gold-hi);outline-offset:3px}
 .market .section-title{font-size:1.45rem}
+
+/* --- v4 (Oct 20): Contact tab, email generator (mailto) --- */
+.tabs{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.tabs a{gap:6px;font-size:.74rem;letter-spacing:.1em;padding:0 4px}
+.tabs a svg{width:16px;height:16px;flex:0 0 auto}
+@media (max-width:420px){.tabs a{flex-direction:column;gap:3px;min-height:52px;font-size:.66rem;letter-spacing:.09em}}
+#contact{scroll-margin-top:84px}
+.cform{display:grid;gap:12px;padding:18px 16px;border-radius:18px;border:1px solid rgba(217,168,78,.4);background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015))}
+.cfield{display:flex;flex-direction:column;gap:6px}
+.cfield label{font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.cform input,.cform select,.cform textarea{width:100%;font:inherit;font-size:16px;color:var(--bone);background:rgba(10,10,10,.7);border:1px solid rgba(217,168,78,.35);border-radius:12px;padding:12px 14px;min-height:48px;-webkit-appearance:none;appearance:none}
+.cform select{background-image:linear-gradient(45deg,transparent 50%,var(--gold) 50%),linear-gradient(135deg,var(--gold) 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px;background-repeat:no-repeat;padding-right:38px}
+.cform select:invalid{color:#8a8a8a}
+.cform option{color:#111;background:#fff}
+.cform textarea{resize:vertical;min-height:120px;line-height:1.45}
+.cform input:focus,.cform select:focus,.cform textarea:focus{outline:none;border-color:var(--gold-hi);box-shadow:0 0 0 3px rgba(246,220,142,.18)}
+.cform [aria-invalid="true"]{border-color:#e07a6a}
+.cerr{font-size:.76rem;color:#f0a08f;min-height:0}
+.cerr:empty{display:none}
+.cbtn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;margin-top:4px;border:0;border-radius:14px;cursor:pointer;font:inherit;font-weight:700;font-size:.85rem;letter-spacing:.14em;text-transform:uppercase;color:#140f04;
+background:linear-gradient(135deg,#F6DC8E 0%,#D9A84E 45%,#B98A3A 100%);box-shadow:0 8px 24px rgba(217,168,78,.25),inset 0 1px 0 rgba(255,255,255,.45)}
+.cbtn svg{width:20px;height:20px}
+.cbtn:active{transform:scale(.985)}
+.cbtn:focus-visible,.ccopy:focus-visible{outline:3px solid var(--gold-hi);outline-offset:3px}
+.cnote{margin:0;font-size:.8rem;color:var(--steel);text-align:center}
+.cnote a{color:var(--gold-hi)}
+.cdirect{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 10px;margin-top:14px;font-size:.82rem;color:var(--steel);text-align:center}
+.cdirect__addr{color:var(--gold-hi);text-decoration:none;font-weight:600;word-break:break-all}
+.ccopy{font:inherit;font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-hi);background:rgba(217,168,78,.08);border:1px solid rgba(217,168,78,.5);border-radius:999px;padding:6px 12px;cursor:pointer}
