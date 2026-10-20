@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>JAY STEEL JEWELRY · Shop, Links, Contact &amp; HQ</title>
   <meta name="description" content="JAY STEEL JEWELRY, Jacksonville, FL. Hypoallergenic and non-tarnish jewelry crafted with 18K gold plating over 316L stainless steel, gold-filled, and 925 sterling silver.">
-  <meta name="theme-color" content="#0A0A0A">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0A0A0A" id="theme-color">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -24,49 +25,72 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
+  <script>
+  /* Theme before first paint: saved choice wins, else the system setting. */
+  (function(){try{var k="jsj-theme",s=localStorage.getItem(k),d=document.documentElement;var t=(s==="light"||s==="dark")?s:(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");d.setAttribute("data-theme",t);d.className+=" js";}catch(e){document.documentElement.setAttribute("data-theme","dark")}})();
+  </script>
   <link rel="preload" href="assets/fonts/montserrat.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="preload" href="assets/fonts/cormorant.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
-<main class="wrap">
-  <header class="hero">
-    <h1 class="visually-hidden">JAY STEEL JEWELRY</h1>
-    <picture><source srcset="assets/logo.webp" type="image/webp"><img class="logo" src="assets/logo.png" alt="JAY STEEL JEWELRY" width="720" height="548"></picture>
+<a class="skip" href="#shop">Skip to shop</a>
+<header class="topbar">
+  <div class="topbar__in">
+    <a class="topbar__brand" href="#top" aria-label="JAY STEEL JEWELRY, top of page"><picture><source srcset="assets/mark-96.webp" type="image/webp"><img src="assets/mark-96.png" alt="" width="96" height="92"></picture><span>JAY STEEL</span></a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#shop">Shop</a>
+      <a href="#links">Links</a>
+      <a href="#contact">Contact</a>
+      <a href="#hq">HQ</a>
+    </nav>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light mode" title="Light / dark">
+      <svg class="theme-toggle__sun" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M5.3 18.7l1.5-1.5M17.2 6.8l1.5-1.5"/></svg>
+      <svg class="theme-toggle__moon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.2 8.2 0 1 0 10.2 10.2z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="wrap" id="top">
+  <section class="hero" aria-labelledby="brand">
+    <picture class="hero__mark"><source srcset="assets/mark.webp" type="image/webp"><img src="assets/mark.png" alt="JAY STEEL JEWELRY chain link mark" width="660" height="630" fetchpriority="high"></picture>
+    <h1 id="brand" class="wordmark">JAY STEEL JEWELRY</h1>
+    <div class="rule rule--diamond" aria-hidden="true"></div>
     <p class="tagline">Tough as Steel, Styled to Thrill.</p>
     <p class="promise">Hypoallergenic and non-tarnish jewelry crafted with 18K gold plating over 316L stainless steel, gold-filled, and 925 sterling silver.</p>
-    <p class="place">Jacksonville, FL</p>
-  </header>
+    <p class="place">Jacksonville, Florida</p>
+    <div class="hero__cta">
+      <a class="btn btn--gold" href="#shop">Shop the collection</a>
+      <a class="btn btn--ghost" href="https://jaysteeljewelry.square.site/" target="_blank" rel="noopener">Full store</a>
+    </div>
+  </section>
 
-  <nav class="tabs" aria-label="Sections">
-    <a href="#shop"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/></svg><span>Shop</span></a>
-    <a href="#links"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg><span>Links</span></a>
-    <a href="#contact"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg><span>Contact</span></a>
-    <a href="#hq"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg><span>HQ</span></a>
-  </nav>
-
-  <section id="shop" class="sec" aria-labelledby="shop-h">
+  <section id="shop" class="sec" aria-labelledby="shop-h" data-reveal>
+    <p class="eyebrow">The collection</p>
     <h2 id="shop-h" class="section-title">Shop</h2>
     <p class="sec__sub">Tap a piece to buy it on our Square store.</p>
     <ul class="pgrid pgrid--one" id="pgrid"><li><a class="pcard" href="https://jaysteeljewelry.square.site/product/stainless-steel-curb-link-bracelet/HQYTIP4J3UIY2HJ6IAAIIIX2" target="_blank" rel="noopener"><span class="pcard__img"><img src="https://153718190.cdn6.editmysite.com/uploads/1/5/3/7/153718190/CMFU7Q6O323NDJ7DSVZDXMKW.jpeg?width=640" alt="Stainless Steel Curb Link Bracelet" loading="lazy" width="640" height="640"></span><span class="pcard__name">Stainless Steel Curb Link Bracelet</span><span class="pcard__row"><span class="pcard__price">$20.00</span><span class="pcard__buy">Buy</span></span></a></li></ul>
     <ul class="links">
       <li><a class="link link--featured" href="https://jaysteeljewelry.square.site/" target="_blank" rel="noopener"><span class="link__icon"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/></svg></span><span class="link__text"><span class="link__label">Shop the full store</span><span class="link__sub">jaysteeljewelry.square.site</span></span><span class="link__arrow" aria-hidden="true">›</span></a></li>
-      <!-- HIDDEN Oct 20, 2026 per Luis ("for now hide"): WhatsApp catalog + Chat to order links. Restore from the previous commit of this file. -->
+      <!-- HIDDEN Oct 20, 2026 per Luis ("for now hide"): WhatsApp catalog + Chat to order links. Restore from commit afeb8c3 of this file. -->
     </ul>
   </section>
 
   <section id="findus" class="findus" aria-labelledby="findus-title" hidden>
-    <h2 id="findus-title" class="section-title">📍 Find us at</h2>
+    <p class="eyebrow">Upcoming</p>
+    <h2 id="findus-title" class="section-title">Find us at</h2>
     <ul></ul>
   </section>
 
-  <section class="market" aria-label="Markets">
-    <span class="market__icon"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>
-    <h2 class="section-title">Find us at the market</h2>
+  <section class="market" aria-label="Markets" data-reveal>
+    <span class="market__icon"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>
+    <h2 class="section-title section-title--sm">Find us at the market</h2>
     <p>We pop up at markets &amp; events all around Jacksonville. Try it on in person, pick your piece, wear it home.</p>
     <p class="market__cta">This week’s spot is always posted on <a href="https://www.instagram.com/jaysteeljewelry/" target="_blank" rel="noopener">Instagram</a>.</p>
   </section>
 
-  <section id="links" class="sec" aria-labelledby="links-h">
+  <section id="links" class="sec" aria-labelledby="links-h" data-reveal>
+    <p class="eyebrow">Follow along</p>
     <h2 id="links-h" class="section-title">Links</h2>
     <ul class="links">
       <li><a class="link" href="https://www.instagram.com/jaysteeljewelry/" target="_blank" rel="noopener"><span class="link__icon"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077"></path></svg></span><span class="link__text"><span class="link__label">Instagram</span><span class="link__sub">@jaysteeljewelry</span></span><span class="link__arrow" aria-hidden="true">›</span></a></li>
@@ -76,7 +100,7 @@
       <li><a class="link" href="https://www.pinterest.com/jaysteeljewelry/" target="_blank" rel="noopener"><span class="link__icon"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z"></path></svg></span><span class="link__text"><span class="link__label">Pinterest</span><span class="link__sub">@jaysteeljewelry</span></span><span class="link__arrow" aria-hidden="true">›</span></a></li>
       <li><a class="link" href="https://t.me/jaysteeljewelry" target="_blank" rel="noopener"><span class="link__icon"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"></path></svg></span><span class="link__text"><span class="link__label">Telegram</span><span class="link__sub">@jaysteeljewelry</span></span><span class="link__arrow" aria-hidden="true">›</span></a></li>
     </ul>
-    <!-- HIDDEN Oct 20, 2026 per Luis ("for now hide"): Call / Text buttons + phone number. Restore from the previous commit of this file. -->
+    <!-- HIDDEN Oct 20, 2026 per Luis ("for now hide"): Call / Text buttons + phone number. Restore from commit afeb8c3 of this file. -->
     <nav class="minis" aria-label="More places to follow">
       <a class="mini" href="https://www.youtube.com/@jaysteeljewelry" target="_blank" rel="noopener" aria-label="YouTube"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg></a>
       <a class="mini" href="https://x.com/jaysteeljewelry" target="_blank" rel="noopener" aria-label="X"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z"></path></svg></a>
@@ -84,7 +108,8 @@
     </nav>
   </section>
 
-  <section id="contact" class="sec" aria-labelledby="contact-h">
+  <section id="contact" class="sec" aria-labelledby="contact-h" data-reveal>
+    <p class="eyebrow">Say hello</p>
     <h2 id="contact-h" class="section-title">Contact</h2>
     <p class="sec__sub">Questions, custom pieces or events. Fill this in and we’ll get back to you by email.</p>
     <form class="cform" id="cform" novalidate>
@@ -98,7 +123,7 @@
         <option>Events</option>
       </select><span class="cerr" id="cf-topic-err" role="alert"></span></div>
       <div class="cfield"><label for="cf-msg">Message</label><textarea id="cf-msg" name="message" rows="5" required maxlength="3000"></textarea><span class="cerr" id="cf-msg-err" role="alert"></span></div>
-      <button class="cbtn" type="submit"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg><span>Create email</span></button>
+      <button class="btn btn--gold cbtn" type="submit"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg><span>Create email</span></button>
       <p class="cnote" id="cf-note" hidden>Your email app should open with the message ready. Just hit send. Didn’t open? <a id="cf-fallback" href="mailto:jaysteeljewelry@gmail.com">Tap here</a> or copy our address below.</p>
     </form>
     <div class="cdirect">
@@ -108,20 +133,22 @@
     </div>
   </section>
 
-  <section id="hq" class="hq" aria-labelledby="hq-h">
-    <span class="hq__icon"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></span>
+  <section id="hq" class="hq" aria-labelledby="hq-h" data-reveal>
+    <span class="hq__icon"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></span>
     <div class="hq__text">
       <h2 id="hq-h">JAY STEEL HQ</h2>
       <p>Team dashboard · password required</p>
     </div>
-    <a class="hq__btn" href="/jaysteel-hq/">Open</a>
+    <a class="btn btn--ghost hq__btn" href="/jaysteel-hq/">Open</a>
   </section>
 
   <footer class="foot">
+    <div class="rule rule--diamond" aria-hidden="true"></div>
     <p class="motto">Tough as Steel, Styled to Thrill.</p>
     <p>© 2026 JAY STEEL JEWELRY · Jacksonville, FL</p>
   </footer>
 </main>
+<script src="theme.js?v=1" defer></script>
 <script src="store.js?v=3" defer></script>
 <script src="findus.js" defer></script>
 <script src="contact.js?v=1" defer></script>
