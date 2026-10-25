@@ -50,12 +50,15 @@
   function daysBetween(a, b) { return Math.round((new Date(b + "T12:00:00Z") - new Date(a + "T12:00:00Z")) / 864e5); }
 
   /* The rule for what the public sees. */
-  function pickEvents(data, now) {
+  var APPROVED = "https://raw.githubusercontent.com/JaySteelJewelry/jaysteeljewelry.github.io/main/data/approved_events.json";
+  function pickEvents(data, now, approved) {
     now = now || nowET();
+    var ok = {}; (Array.isArray(approved) ? approved : (approved && approved.ids) || []).forEach(function (x) { ok[String(x)] = 1; });
     var list = Array.isArray(data) ? data : (data && Array.isArray(data.events) ? data.events : []);
     var seen = {};
     return list.filter(function (e) {
       if (!e || !isDate(e.date)) return false;
+      if (!ok[String(e.id)]) return false;   // only dates Luis approved for the bio page
       if (SHOW_STATUSES.indexOf(String(e.status || "").toLowerCase()) === -1) return false;
       if (EXCLUDE.test([e.name, e.venue, e.address, e.series, e.id].join(" "))) return false;
       var last = isDate(e.endDate) ? e.endDate : e.date;
@@ -198,5 +201,6 @@
   var box = document.getElementById("cal");
   if (!box) return;
   if (!root.fetch) { empty(box); return; }
-  load(0).then(function (data) { render(box, pickEvents(data)); }).catch(function () { empty(box); });
+  var appr = fetch(APPROVED + "?t=" + Date.now(), { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+  Promise.all([load(0), appr]).then(function (v) { render(box, pickEvents(v[0], null, v[1])); }).catch(function () { empty(box); });
 })(typeof window !== "undefined" ? window : globalThis);
