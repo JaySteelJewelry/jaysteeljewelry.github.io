@@ -21,7 +21,7 @@
 :root[data-theme="light"]{
   color-scheme:light;
   --bg:#F6F4EF;--bg-2:#F1EEE6;--surface:#FFFDF9;--surface-2:#F9F6EF;
-  --text:#141414;--text-2:#5E584C;--text-3:#7C7568;
+  --text:#141414;--text-2:#5E584C;--text-3:#6E685B;
   --accent:#C9973F;--accent-text:#8E6420;--accent-soft:rgba(201,151,63,.14);
   --line:rgba(142,100,32,.28);--line-2:rgba(20,20,20,.08);
   --shadow:0 10px 28px rgba(60,45,10,.10),0 1px 2px rgba(60,45,10,.06);--shadow-lift:0 22px 44px rgba(60,45,10,.18),0 0 0 1px rgba(142,100,32,.35);
@@ -213,3 +213,8 @@ img{max-width:100%;height:auto;display:block}
   .cbtn{width:auto;justify-self:start;padding:0 30px}
   .hq{padding:24px 26px}
 }
+
+/* ---------- Web build standard (Oct 25): 44px tap areas without changing the layout ---------- */
+.nav a,.theme-toggle,.market__cta a,.cdirect__addr,.ccopy,#cf-fallback{position:relative}
+.nav a::after,.market__cta a::after,.cdirect__addr::after,#cf-fallback::after{content:"";position:absolute;left:0;right:0;top:50%;height:44px;transform:translateY(-50%)}
+.theme-toggle::after,.ccopy::after{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:44px;transform:translate(-50%,-50%)}
