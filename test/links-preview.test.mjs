@@ -21,6 +21,7 @@ const FIX = { events: [
   { id: 'old', name: 'Past Market', status: 'booked', date: '2026-10-18', venue: 'X', address: 'Jacksonville, FL' },
   { id: 'today-over', name: 'Morning Market', status: 'booked', date: '2026-10-25', start: '08:00', end: '11:00', venue: 'X', address: 'Jacksonville, FL' },
 ] };
+const ALL = { ids: FIX.events.map((e) => e.id) };  // Oct 27: the page shows only ids in data/approved_events.json
 
 test('no "Market Day" and no app chrome anywhere on the page', () => {
   assert.doesNotMatch(all, /market\s*day/i);
@@ -46,7 +47,7 @@ test('every social link is https, real, and never the Ibsla page', () => {
 });
 
 test('calendar never shows Hyatt Place, only confirmed future dates, sorted', () => {
-  const ev = cal.pickEvents(FIX, NOW);
+  const ev = cal.pickEvents(FIX, NOW, ALL);
   assert.deepEqual(ev.map((e) => e.id), ['unf-2026-10-28', 'park-2026-11-07', 'oak-2026-12-05']);
   assert.ok(ev.every((e) => !/hyatt/i.test(JSON.stringify(e))));
   assert.deepEqual(cal.SHOW_STATUSES, ['booked', 'approved', 'confirmed', 'accepted']);
@@ -55,7 +56,7 @@ test('calendar never shows Hyatt Place, only confirmed future dates, sorted', ()
 });
 
 test('cards show venue + city, never a street address; internal notes stripped from names', () => {
-  const [unf, park, oak] = cal.pickEvents(FIX, NOW);
+  const [unf, park, oak] = cal.pickEvents(FIX, NOW, ALL);
   assert.equal(cal.displayName(unf.name), 'UNF Tabling');
   assert.equal(cal.place(unf), 'University of North Florida · Jacksonville, FL');
   assert.equal(cal.place(park), 'Jacksonville, FL');
@@ -65,7 +66,7 @@ test('cards show venue + city, never a street address; internal notes stripped f
 });
 
 test('add-to-calendar .ics is valid and address-free', () => {
-  const [unf, park] = cal.pickEvents(FIX, NOW);
+  const [unf, park] = cal.pickEvents(FIX, NOW, ALL);
   const ics = cal.buildICS(park);
   assert.match(ics, /^BEGIN:VCALENDAR\r\n/); assert.match(ics, /END:VCALENDAR\r\n$/);
   assert.match(ics, /DTSTART;TZID=America\/New_York:20261107T100000/);
@@ -86,4 +87,24 @@ test('shell: title, viewport, OG image, local assets exist, no innerHTML', () =>
   for (const m of html.matchAll(/(?:src|href)="([a-z][\w.-]+\.(?:js|css))/g)) assert.ok(existsSync(D + m[1]), 'missing ' + m[1]);
   assert.doesNotMatch(js, /innerHTML/);
   assert.match(css, /\[hidden\]\{display:none!important\}/);
+});
+
+test('approval gate: empty approved list shows no events; only approved ids show (Oct 27)', () => {
+  assert.deepEqual(cal.pickEvents(FIX, NOW, { ids: [] }), []);
+  assert.deepEqual(cal.pickEvents(FIX, NOW, null), []);
+  assert.deepEqual(cal.pickEvents(FIX, NOW, { ids: ['park-2026-11-07', 'p1'] }).map((e) => e.id), ['park-2026-11-07']);
+  const live = JSON.parse(readFileSync(R + 'data/approved_events.json', 'utf8'));
+  assert.ok(Array.isArray(live.ids));
+});
+
+test('Daylight look (Oct 28): light only, no theme toggle, one main Shop button, big tap targets', () => {
+  assert.match(html, /<html lang="en" data-theme="light">/);
+  assert.doesNotMatch(html, /id="theme"|theme-init\.js/);
+  assert.match(css, /--bg:#FFFFFF/);
+  assert.doesNotMatch(css, /color-scheme:dark|#0A0A0A/);
+  assert.equal((html.match(/class="btn btn--main"/g) || []).length, 1);
+  assert.match(css, /\.btn\{[^}]*min-height:68px/);
+  assert.match(css, /\.chip\{[^}]*min-height:44px/);
+  assert.match(html, /<h1 class="brand__name">JAY STEEL JEWELRY<\/h1>/);
+  assert.match(html, /\/assets\/mark\.png/);
 });
