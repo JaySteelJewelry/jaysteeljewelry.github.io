@@ -58,7 +58,11 @@
     var seen = {};
     return list.filter(function (e) {
       if (!e || !isDate(e.date)) return false;
-      if (!ok[String(e.id)]) return false;   // only dates Luis approved for the bio page
+      var st = String(e.status || "").toLowerCase();
+      // Same rule as the social autoposter (Luis, Nov 2-3 2026): allowlisted id, OR approved/booked AND paid.
+      if (!ok[String(e.id)] && !((st === "approved" || st === "booked") && e.paid === true)) return false;
+      if (/^park-street-/i.test(String(e.id || ""))) return false;   // Luis said no to Park Street
+      if (/declined|cancel/.test(st)) return false;
       if (SHOW_STATUSES.indexOf(String(e.status || "").toLowerCase()) === -1) return false;
       if (EXCLUDE.test([e.name, e.venue, e.address, e.series, e.id].join(" "))) return false;
       var last = isDate(e.endDate) ? e.endDate : e.date;

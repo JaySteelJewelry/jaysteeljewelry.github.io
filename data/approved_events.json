@@ -1,7 +1,9 @@
 {
- "note": "Event ids Luis approved for the bio page + social posts. Empty = no events shown.",
+ "note": "Allowlisted event ids for the bio page + social posts (plus any approved/booked AND paid event in events.json, added automatically).",
  "ids": [
+  "dart-bar-2026-10-30",
+  "unf-market-day-2026-11-04",
   "unf-tabling-2026-10-28",
-  "dart-bar-2026-10-30"
+  "unf-tabling-2026-11-03"
  ]
 }
