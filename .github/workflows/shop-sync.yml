@@ -1,0 +1,44 @@
+name: Shop inventory sync
+# Every 30 minutes: read the POS product library (read-only) and refresh shop/products.json + shop/images/.
+# Needs repo secrets ZETTLE_CLIENT_ID and ZETTLE_API_KEY; without them the job skips quietly.
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: shop-sync
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ZETTLE_CLIENT_ID: ${{ secrets.ZETTLE_CLIENT_ID }}
+      ZETTLE_API_KEY: ${{ secrets.ZETTLE_API_KEY }}
+    steps:
+      - name: Skip until the POS key is set
+        if: env.ZETTLE_API_KEY == ''
+        run: echo "ZETTLE_API_KEY secret not set yet; nothing to sync."
+      - uses: actions/checkout@v4
+        if: env.ZETTLE_API_KEY != ''
+      - uses: actions/setup-python@v5
+        if: env.ZETTLE_API_KEY != ''
+        with:
+          python-version: "3.12"
+      - name: Sync
+        if: env.ZETTLE_API_KEY != ''
+        run: |
+          pip install --quiet pillow
+          python3 scripts/sync_inventory.py
+      - name: Commit changes
+        if: env.ZETTLE_API_KEY != ''
+        run: |
+          git add shop/products.json shop/images 2>/dev/null || true
+          if git diff --cached --quiet; then echo "No inventory change."; exit 0; fi
+          git config user.name "jaysteel-shop-sync"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Shop: sync inventory from POS"
+          for i in 1 2 3; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
+          exit 1
