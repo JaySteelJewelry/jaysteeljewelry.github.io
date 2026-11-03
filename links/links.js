@@ -147,6 +147,7 @@
   function render(box, events) {
     box.textContent = ""; box.setAttribute("aria-busy", "false");
     if (!events.length) { empty(box); return; }
+    events = events.slice(0, 1);   // Luis (Nov 3 2026): show one event at a time — the next one; rolls to the following event when it ends
     var lastMonth = "", ul = null, hidden = [];
     events.forEach(function (e, i) {
       var d = new Date(e.date + "T12:00:00Z"), m = MONTHS[d.getUTCMonth()] + " " + d.getUTCFullYear();
