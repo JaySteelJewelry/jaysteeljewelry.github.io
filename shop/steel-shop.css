@@ -1,0 +1,19 @@
+/* /shop/ — "Dark Steel" override (Nov 6 2026, Luis: no navy/white/gold). Loaded after ../styles.css + shop.css; recolors their tokens, dark only. */
+:root,:root[data-theme="dark"],:root[data-theme="light"]{
+  color-scheme:dark;
+  --gold:#C9CED6;--gold-hi:#E3E6EA;--gold-lo:#7E858F;--steel:#C9CED6;--bone:#ECEEF1;--jet:#0E0F11;
+  --bg:#0E0F11;--bg-2:#121316;--surface:#17191C;--surface-2:#1F2226;
+  --text:#ECEEF1;--text-2:#C3C8CF;--text-3:#9AA1AB;
+  --accent:#C9CED6;--accent-text:#C9CED6;--accent-soft:rgba(201,206,214,.12);
+  --line:#2A2E33;--line-2:#363B42;
+  --shadow:0 10px 30px rgba(0,0,0,.45);--shadow-lift:0 22px 48px rgba(0,0,0,.6),0 0 0 1px rgba(201,206,214,.35);
+  --gold-grad:linear-gradient(135deg,#F2F4F7 0%,#C9CED6 40%,#9AA1AB 100%);
+  --hero-glow:radial-gradient(60% 40% at 50% 0%,rgba(201,206,214,.08),transparent 70%);
+  --topbar:rgba(14,15,17,.86);--field:#121316;--on-accent:#0E0F11;
+}
+.eyebrow,:root[data-theme="light"] .eyebrow{color:var(--text-3)}
+.btn--gold{background:var(--accent);color:var(--on-accent);box-shadow:0 10px 24px rgba(0,0,0,.4)}
+.btn--gold:hover{background:#E3E6EA;box-shadow:0 16px 32px rgba(0,0,0,.5)}
+.soon__mark img{filter:drop-shadow(0 14px 26px rgba(0,0,0,.5))}
+.sbar .bagbtn{width:46px;height:46px;border-radius:14px;border-color:var(--line);background:var(--surface);color:var(--text);margin:0}
+.sbar .bagbtn:hover{border-color:var(--accent)}

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Shop · JAY STEEL JEWELRY</title>
   <meta name="description" content="Shop JAY STEEL JEWELRY: chains, bracelets and rings in 18K gold plated 316L stainless steel, gold-filled and 925 sterling silver. Add pieces to your bag and check out once.">
-  <meta name="color-scheme" content="dark light">
-  <meta name="theme-color" content="#0A0A0A" id="theme-color">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0E0F11">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Shop · JAY STEEL JEWELRY">
   <meta property="og:description" content="Tough as Steel, Styled to Thrill. Shop the collection.">
@@ -16,33 +16,39 @@
   <link rel="icon" href="../favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <script>
-  (function(){try{var k="jsj-theme",s=localStorage.getItem(k),d=document.documentElement;var t=(s==="light"||s==="dark")?s:(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");d.setAttribute("data-theme",t);d.className+=" js";}catch(e){document.documentElement.setAttribute("data-theme","dark")}})();
-  </script>
   <link rel="preload" href="../assets/fonts/montserrat.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/cormorant.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../styles.css?v=6">
   <link rel="stylesheet" href="shop.css?v=1">
+  <link rel="stylesheet" href="/assets/steel.css?v=1">
+  <link rel="stylesheet" href="steel-shop.css?v=1">
 </head>
 <body class="shop-page">
 <a class="skip" href="#shop">Skip to products</a>
-<header class="topbar">
-  <div class="topbar__in">
-    <a class="topbar__brand" href="../" aria-label="JAY STEEL JEWELRY home"><picture><source srcset="../assets/mark-96.webp" type="image/webp"><img src="../assets/mark-96.png" alt="" width="96" height="92"></picture><span>JAY STEEL</span></a>
-    <nav class="nav" aria-label="Site">
-      <a href="./" aria-current="page">Shop</a>
-      <a href="../links/">Links</a>
-    </nav>
+<header class="sbar">
+  <div class="sbar__in">
+    <a class="sbar__brand" href="/" aria-label="JAY STEEL JEWELRY home"><picture><source srcset="/assets/mark-steel-96.webp" type="image/webp"><img src="/assets/mark-steel-96.png" alt="" width="96" height="92"></picture><span>JAY STEEL</span></a>
+    <div class="sbar__tools">
     <button class="bagbtn" id="bag-open" type="button" aria-haspopup="dialog" aria-controls="bag" aria-label="Open bag, 0 items">
       <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/></svg>
       <span class="bagbtn__count" id="bag-count" hidden>0</span>
     </button>
-    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light mode" title="Light / dark">
-      <svg class="theme-toggle__sun" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M5.3 18.7l1.5-1.5M17.2 6.8l1.5-1.5"/></svg>
-      <svg class="theme-toggle__moon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.2 8.2 0 1 0 10.2 10.2z"/></svg>
-    </button>
+      <button class="sbar__burger" id="smenu-btn" type="button" aria-expanded="false" aria-controls="smenu" aria-label="Open menu"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
   </div>
 </header>
+<div class="smenu__scrim" id="smenu-scrim" hidden></div>
+<nav class="smenu" id="smenu" aria-label="Menu" hidden>
+  <div class="smenu__head"><span class="smenu__title">Menu</span><button class="smenu__close" id="smenu-close" type="button" aria-label="Close menu">×</button></div>
+  <ul>
+      <li><a href="/#shop"><span class="smenu__ic"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/></svg></span><span class="smenu__lbl">Shop</span><span class="smenu__arr" aria-hidden="true">›</span></a></li>
+      <li><a href="/links/#find"><span class="smenu__ic"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span><span class="smenu__lbl">Find Us</span><span class="smenu__arr" aria-hidden="true">›</span></a></li>
+      <li><a href="/links/"><span class="smenu__ic"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span><span class="smenu__lbl">All Links</span><span class="smenu__arr" aria-hidden="true">›</span></a></li>
+      <li><a href="/#contact"><span class="smenu__ic"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg></span><span class="smenu__lbl">Contact</span><span class="smenu__arr" aria-hidden="true">›</span></a></li>
+      <li><a class="smenu__hq" href="/jaysteel-hq/"><span class="smenu__ic"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></span><span class="smenu__lbl">JAY STEEL HQ</span><span class="smenu__arr" aria-hidden="true">›</span></a></li>
+  </ul>
+  <p class="smenu__foot">© 2026 JAY STEEL JEWELRY</p>
+</nav>
 
 <main class="wrap" id="top">
   <section id="shop" class="sec shop" aria-labelledby="shop-h">
@@ -55,7 +61,7 @@
     <ul class="pgrid sgrid" id="sgrid" aria-label="Products"></ul>
 
     <div class="soon" id="soon" hidden>
-      <picture class="soon__mark"><source srcset="../assets/mark.webp" type="image/webp"><img src="../assets/mark.png" alt="" width="660" height="630"></picture>
+      <picture class="soon__mark"><source srcset="../assets/mark-steel.webp" type="image/webp"><img src="../assets/mark-steel.png" alt="" width="660" height="630"></picture>
       <h2 class="soon__title">New pieces coming soon</h2>
       <p class="soon__text">The next drop is being listed now. Follow along so you see it first.</p>
       <div class="soon__cta">
@@ -88,8 +94,8 @@
 </aside>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script src="../theme.js?v=1" defer></script>
 <script src="checkout.js?v=1" defer></script>
 <script src="shop.js?v=1" defer></script>
+<script src="/assets/steel-nav.js?v=1" defer></script>
 </body>
 </html>
