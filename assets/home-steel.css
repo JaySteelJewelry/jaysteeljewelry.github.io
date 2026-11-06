@@ -107,3 +107,11 @@ a:hover{color:var(--st-hover)}
 .soon__h{margin:0 0 8px;font-size:1.25rem;font-weight:800}
 .soon__p{margin:0 0 18px;color:var(--st-muted)}
 .soon .hbtn{width:100%}
+
+/* light theme specifics */
+html[data-theme="light"] .hero__mark{background:radial-gradient(circle at 50% 38%,#4A515B 0%,#2A2E33 62%,#1F2226 100%);border-color:#2A2E33}
+html[data-theme="light"] .lp__img{background:#D3D7DC}
+html[data-theme="light"] .lp__pf{background:#2A2E33;border-color:#2A2E33}
+html[data-theme="light"] .cerr{color:#A33A3A}
+html[data-theme="light"] .cfield [aria-invalid="true"]{border-color:#B44}
+html[data-theme="light"] .cfield input:focus,html[data-theme="light"] .cfield select:focus,html[data-theme="light"] .cfield textarea:focus{box-shadow:0 0 0 3px rgba(63,70,80,.18)}

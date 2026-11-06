@@ -35,3 +35,28 @@
     }
   });
 })();
+
+/* Theme setting in the ☰ menu: Dark (default) · Light · Match phone. Saved in localStorage "jsj-theme"; /assets/theme-init.js applies it before paint. */
+(function () {
+  var menu = document.getElementById("smenu"); if (!menu) return;
+  var KEY = "jsj-theme", OPTS = [["dark", "Dark"], ["light", "Light"], ["auto", "Match phone"]];
+  function pref() { var t = "dark"; try { t = localStorage.getItem(KEY) || "dark"; } catch (e) {} return (t === "light" || t === "auto") ? t : "dark"; }
+  var mq = window.matchMedia ? matchMedia("(prefers-color-scheme: light)") : null;
+  function apply(t) {
+    var eff = t === "auto" ? (mq && mq.matches ? "light" : "dark") : t, d = document.documentElement;
+    d.setAttribute("data-theme", eff); d.setAttribute("data-theme-pref", t);
+    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute("content", eff === "light" ? "#ECEEF1" : "#0E0F11");
+  }
+  var box = document.createElement("div"); box.className = "stheme"; box.setAttribute("role", "radiogroup"); box.setAttribute("aria-labelledby", "stheme-l");
+  var lbl = document.createElement("span"); lbl.className = "stheme__l"; lbl.id = "stheme-l"; lbl.textContent = "Theme"; box.appendChild(lbl);
+  var row = document.createElement("div"); row.className = "stheme__row"; box.appendChild(row);
+  var btns = OPTS.map(function (o) {
+    var b = document.createElement("button"); b.type = "button"; b.className = "stheme__b"; b.setAttribute("role", "radio"); b.dataset.t = o[0]; b.textContent = o[1];
+    b.addEventListener("click", function () { try { localStorage.setItem(KEY, o[0]); } catch (e) {} apply(o[0]); sync(); });
+    row.appendChild(b); return b;
+  });
+  function sync() { var p = pref(); btns.forEach(function (b) { var on = b.dataset.t === p; b.setAttribute("aria-checked", on ? "true" : "false"); b.tabIndex = on ? 0 : -1; }); }
+  var foot = menu.querySelector(".smenu__foot"); menu.insertBefore(box, foot || null);
+  if (mq) { var h = function () { if (pref() === "auto") apply("auto"); }; if (mq.addEventListener) mq.addEventListener("change", h); else if (mq.addListener) mq.addListener(h); }
+  apply(pref()); sync();
+})();

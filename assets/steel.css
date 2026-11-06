@@ -46,3 +46,31 @@ body.st-lock{overflow:hidden}
 .smenu__foot{margin-top:auto;padding:18px 6px 0;font-size:.75rem;letter-spacing:.08em;color:var(--st-muted)}
 @media (min-width:760px){.sbar__in{padding:0 24px}.sbar__brand{font-size:.875rem}}
 @media (prefers-reduced-motion:reduce){.smenu,.smenu__scrim{transition:none}}
+
+/* Theme setting (Nov 6 2026): segmented control in the ☰ menu */
+.stheme{margin-top:16px;padding:12px 6px 0;border-top:1px solid var(--st-line)}
+.stheme__l{display:block;margin:0 0 8px 2px;font-size:.6875rem;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:var(--st-muted)}
+.stheme__row{display:grid;grid-template-columns:1fr 1fr 1.35fr;gap:6px;background:var(--st-bg);border:1px solid var(--st-line);border-radius:14px;padding:4px}
+.stheme__b{min-height:44px;border:0;border-radius:10px;background:transparent;color:var(--st-text);font:inherit;font-size:.875rem;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.stheme__b[aria-checked="true"]{background:var(--st-accent);color:var(--st-on)}
+.stheme__b:focus-visible{outline:3px solid var(--st-accent);outline-offset:2px}
+
+/* Light theme: light steel (no white-led cards, no gold) */
+html[data-theme="light"]{
+  color-scheme:light;
+  --st-bg:#E6E8EB;--st-card:#F1F2F4;--st-raised:#DCDFE3;--st-line:#C6CBD1;--st-text:#15171A;--st-muted:#555C66;
+  --st-accent:#3F4650;--st-hover:#2A2F36;--st-on:#F1F2F4;
+  --st-grad:linear-gradient(135deg,#2A2F36 0%,#5B636E 55%,#8A919B 100%);
+  /* /links/ page tokens */
+  --bg:#E6E8EB;--card:#F1F2F4;--soft:#DCDFE3;--cream:#DCDFE3;--ink:#15171A;--ink-2:#3A4049;--ink-3:#555C66;
+  --line:#C6CBD1;--line-2:#B5BBC3;--gold:#3F4650;--gold-2:#6B727C;--gold-text:#3F4650;--hover:#2A2F36;--on:#F1F2F4;
+  --grad:linear-gradient(135deg,#2A2F36 0%,#5B636E 55%,#8A919B 100%);
+  --shadow:0 1px 2px rgba(20,24,30,.08),0 8px 22px rgba(20,24,30,.10);
+}
+html[data-theme="light"] body{background-color:var(--st-bg)}
+html[data-theme="light"] .sbar{background:rgba(230,232,235,.88)}
+html[data-theme="light"] .smenu a:active{background:#D3D7DC}
+html[data-theme="light"] .smenu__scrim{background:rgba(20,24,30,.35)}
+html[data-theme="light"] .cal{background:var(--card)}
+html[data-theme="light"] .ev{box-shadow:0 4px 12px rgba(20,24,30,.08)}
+html[data-theme="light"] .ev--next{box-shadow:0 0 0 1px var(--gold-2),0 6px 16px rgba(20,24,30,.10)}

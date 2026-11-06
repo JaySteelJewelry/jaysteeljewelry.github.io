@@ -60,3 +60,16 @@ test('latest post: caption never shows a store link; data file shape', () => {
     if (d.latest.image) assert.ok(existsSync(R + d.latest.image.split('?')[0].slice(1)), 'latest image missing');
   }
 });
+
+test('theme setting: dark default, light, match phone; applied before paint; ptr include kept', () => {
+  const init = rd('assets/theme-init.js'), nav = rd('assets/steel-nav.js'), sc = rd('assets/steel.css');
+  for (const f of ['index.html', 'links/index.html', 'shop/index.html']) {
+    const h = rd(f); const i = h.indexOf('/assets/theme-init.js'), c = h.indexOf('stylesheet');
+    assert.ok(i > 0 && i < h.indexOf('</head>'), f + ' theme-init in head');
+    assert.ok(!/theme-init\.js[^>]*(defer|async)/.test(h), f + ' theme-init must block');
+  }
+  for (const f of ['index.html', 'links/index.html']) assert.match(rd(f), /<script src="\/ptr\.js\?v=1" defer><\/script>/);
+  assert.match(init, /"dark"/); assert.match(init, /prefers-color-scheme: light/);
+  for (const w of ['"Dark"', '"Light"', '"Match phone"', 'jsj-theme']) assert.ok(nav.includes(w), w);
+  assert.match(sc, /html\[data-theme="light"\]\{/);
+});
