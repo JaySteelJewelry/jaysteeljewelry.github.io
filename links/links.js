@@ -13,7 +13,6 @@
   var EXCLUDE = /hyatt/i;              // Luis is not attending these; hard-excluded
   var TZ = "America/New_York";
   var PAGE = "https://jaysteeljewelry.github.io/links/";
-  var STORE = "https://jaysteeljewelry.square.site";
   var INITIAL = 6;
   var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   var DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -93,7 +92,7 @@
       L.push("DTSTART;VALUE=DATE:" + compact(e.date), "DTEND;VALUE=DATE:" + compact(addDays(last, 1)));
     }
     L.push("SUMMARY:" + icsEsc("JAY STEEL JEWELRY at " + name), "LOCATION:" + icsEsc(place(e, ", ")),
-      "DESCRIPTION:" + icsEsc("Come find JAY STEEL JEWELRY at " + name + ". Shop online: " + STORE), "URL:" + PAGE,
+      "DESCRIPTION:" + icsEsc("Come find JAY STEEL JEWELRY at " + name + ". All our links: " + PAGE), "URL:" + PAGE,
       "END:VEVENT", "END:VCALENDAR");
     return L.join("\r\n") + "\r\n";
   }
@@ -103,7 +102,7 @@
     else dates = compact(e.date) + "/" + compact(addDays(last, 1));
     return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent("JAY STEEL JEWELRY at " + name) +
       "&dates=" + dates + "&ctz=" + encodeURIComponent(TZ) + "&location=" + encodeURIComponent(place(e, ", ")) +
-      "&details=" + encodeURIComponent("Shop online: " + STORE);
+      "&details=" + encodeURIComponent("All our links: " + PAGE);
   }
 
   /* ---------- DOM ---------- */

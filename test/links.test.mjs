@@ -38,10 +38,11 @@ test('brand rules: never "handmade", no "wholesale", no tel:/sms:, no phone numb
 
 test('every social link is https, real, and never the Ibsla page', () => {
   const hrefs = [...html.matchAll(/href="(https?:[^"]+)"/g)].map((m) => m[1]).filter((u) => !/jaysteeljewelry\.github\.io/.test(u));
-  const socials = hrefs.filter((u) => /instagram|tiktok|facebook|threads|x\.com|pinterest|youtube|square\.site/.test(u));
-  assert.ok(socials.length >= 8, 'expected store + 7 socials, got ' + socials.length);
+  const socials = hrefs.filter((u) => /instagram|tiktok|facebook|threads|x\.com|pinterest|youtube/.test(u));
+  assert.ok(socials.length >= 7, 'expected 7 socials, got ' + socials.length);
   for (const u of hrefs) { assert.match(u, /^https:\/\//, u); assert.doesNotMatch(u, /110981715366964|ibsla/i, u); }
-  assert.ok(html.includes('https://jaysteeljewelry.square.site'));
+  assert.doesNotMatch(all, /square/i);
+  assert.doesNotMatch(html, /href="\/shop/);
   assert.ok(html.includes('mailto:jaysteeljewelry@gmail.com'));
   for (const m of html.matchAll(/<a [^>]*target="_blank"[^>]*>/g)) assert.match(m[0], /rel="noopener/, m[0]);
 });
@@ -82,8 +83,8 @@ test('add-to-calendar .ics is valid and address-free', () => {
 test('shell: title, viewport, OG image, local assets exist, no innerHTML', () => {
   assert.match(html, /<title>[^<]+<\/title>/);
   assert.match(html, /name="viewport" content="width=device-width/);
-  assert.match(html, /property="og:image" content="https:\/\/jaysteeljewelry\.github\.io\/assets\/og\.jpg"/);
-  for (const m of html.matchAll(/(?:src|href|srcset)="(\/[^"?#]+)/g)) assert.ok(existsSync(R + m[1].slice(1)), 'missing ' + m[1]);
+  assert.match(html, /property="og:image" content="https:\/\/jaysteeljewelry\.github\.io\/assets\/og-steel\.jpg"/);
+  for (const m of html.matchAll(/(?:src|href|srcset)="(\/[^"?#]+)/g)) if (m[1] !== '/jaysteel-market-logistics-app/' && m[1] !== '/') assert.ok(existsSync(R + m[1].slice(1)), 'missing ' + m[1]);
   for (const m of html.matchAll(/(?:src|href)="([a-z][\w.-]+\.(?:js|css))/g)) assert.ok(existsSync(D + m[1]), 'missing ' + m[1]);
   assert.doesNotMatch(js, /innerHTML/);
   assert.match(css, /\[hidden\]\{display:none!important\}/);
@@ -97,14 +98,10 @@ test('approval gate: empty approved list shows no events; only approved ids show
   assert.ok(Array.isArray(live.ids));
 });
 
-test('Daylight look (Oct 28): light only, no theme toggle, one main Shop button, big tap targets', () => {
-  assert.match(html, /<html lang="en" data-theme="light">/);
-  assert.doesNotMatch(html, /id="theme"|theme-init\.js/);
-  assert.match(css, /--bg:#FFFFFF/);
-  assert.doesNotMatch(css, /color-scheme:dark|#0A0A0A/);
-  assert.equal((html.match(/class="btn btn--main"/g) || []).length, 1);
-  assert.match(css, /\.btn\{[^}]*min-height:68px/);
-  assert.match(css, /\.chip\{[^}]*min-height:44px/);
+test('Dark steel look (Nov 6): one menu, no shop, no tagline', () => {
+  assert.match(html, /<html lang="en" data-theme="dark">/);
+  assert.match(html, /\/assets\/steel\.css/);
+  assert.doesNotMatch(html, /Shop the collection|brand__tag/);
   assert.match(html, /<h1 class="brand__name">JAY STEEL JEWELRY<\/h1>/);
-  assert.match(html, /\/assets\/mark\.png/);
+  assert.equal((html.match(/id="smenu"/g) || []).length, 1);
 });
