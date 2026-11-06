@@ -36,7 +36,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .rule{display:block;width:44px;height:2px;margin:16px auto 0;border-radius:2px;background:var(--grad)}
 .rule--diamond{position:relative;width:120px;background:linear-gradient(90deg,transparent,var(--gold-2) 30%,var(--gold-2) 70%,transparent);height:1px}
 .rule--diamond::after{content:"";position:absolute;left:50%;top:50%;width:7px;height:7px;background:var(--gold);transform:translate(-50%,-50%) rotate(45deg);border-radius:1px}
-.hero__cta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:28px 0 0}
+.hero__cta{display:grid;grid-template-columns:1fr;gap:10px;margin:28px auto 0;max-width:20rem} /* Nov 6 2026: one hero button (All my links lives in the ☰ menu) */
 .hero__mark img{filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}
 
 /* buttons */
