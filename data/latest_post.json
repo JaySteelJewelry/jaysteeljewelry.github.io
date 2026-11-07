@@ -1,21 +1,21 @@
 {
  "_about": "Written by Tab's latest-post updater (update_latest_post.py on Tab's box). The home page shows 'latest'. Never edit by hand unless the updater is off.",
- "updated_at": "2026-11-06T16:14:40Z",
+ "updated_at": "2026-11-07T12:00:25Z",
  "sources": {
   "facebook": "ok",
-  "instagram": "no posts read: connected-app action previously failed",
+  "instagram": "ok",
   "x": "public timeline not readable (HTTP Error 429: Too Many Requests)",
   "tiktok": "not readable: no TikTok app is connected and TikTok has no public post list",
   "autopost_log": "ok"
  },
  "latest": {
-  "platform": "facebook",
-  "id": "753436947858142_122187689756978343",
-  "date": "2026-11-04T11:30:33Z",
-  "caption": "Today! Come find us at UNF Market Day — Wed Nov 4, 10 AM–1 PM, Osprey Plaza at the University of North Florida.\n\nHypoallergenic and non-tarnish jewelry crafted with 18K gold plating over 316L stainless steel, gold-filled, and 925 sterling silver.",
-  "permalink": "https://www.facebook.com/122184886436978343/posts/122187689756978343",
-  "image": "/assets/latest/post.jpg?v=53a8a5c3ba",
-  "image_w": 720,
-  "image_h": 900
+  "platform": "instagram",
+  "id": "18011832530991486",
+  "date": "2026-11-07T11:32:07Z",
+  "caption": "Hypoallergenic and non-tarnish jewelry crafted with 18K gold plating over 316L stainless steel, gold-filled, and 925 sterling silver.",
+  "permalink": "https://www.instagram.com/p/DfcFL1bG2At/",
+  "image": "/assets/latest/post.jpg?v=988b900335",
+  "image_w": 1080,
+  "image_h": 1350
  }
 }
