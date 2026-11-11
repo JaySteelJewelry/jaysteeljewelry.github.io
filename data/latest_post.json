@@ -1,6 +1,6 @@
 {
  "_about": "Written by Tab's latest-post updater (update_latest_post.py on Tab's box). The home page shows 'latest'. Never edit by hand unless the updater is off.",
- "updated_at": "2026-11-09T12:01:27Z",
+ "updated_at": "2026-11-11T00:02:56Z",
  "sources": {
   "facebook": "ok",
   "instagram": "ok",
@@ -10,12 +10,12 @@
  },
  "latest": {
   "platform": "facebook",
-  "id": "753436947858142_3762241197265073",
-  "date": "2026-11-09T06:09:15Z",
-  "caption": "",
-  "permalink": "https://www.facebook.com/122184886436978343/posts/3762241197265073?substory_index=3762241197265073",
-  "image": "/assets/latest/post.jpg?v=b93a06feca",
-  "image_w": 1080,
-  "image_h": 608
+  "id": "753436947858142_122188625672978343",
+  "date": "2026-11-11T00:01:50Z",
+  "caption": "See you tomorrow! Come find us at UNF Market Day — Wed Nov 11, 10 AM–1 PM, Osprey Plaza at the University of North Florida, Jacksonville.\nHypoallergenic and non-tarnish jewelry: 18K gold plating over stainless steel, gold-filled, and 925 sterling silver.",
+  "permalink": "https://www.facebook.com/122184886436978343/posts/122188625672978343",
+  "image": "/assets/latest/post.jpg?v=a03204b55e",
+  "image_w": 720,
+  "image_h": 900
  }
 }
