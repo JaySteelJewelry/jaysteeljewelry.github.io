@@ -1,6 +1,6 @@
 {
  "_about": "Written by Tab's latest-post updater (update_latest_post.py on Tab's box). The home page shows 'latest'. Never edit by hand unless the updater is off.",
- "updated_at": "2026-11-11T12:02:54Z",
+ "updated_at": "2026-11-12T05:06:46Z",
  "sources": {
   "facebook": "ok",
   "instagram": "ok",
@@ -10,12 +10,12 @@
  },
  "latest": {
   "platform": "facebook",
-  "id": "753436947858142_122188690298978343",
-  "date": "2026-11-11T11:31:35Z",
-  "caption": "Today! Find us at UNF Market Day — 10 AM–1 PM, Osprey Plaza. Come say hi and shop the table.\n\nHypoallergenic and non-tarnish jewelry: 18K gold plating over stainless steel, gold-filled, and 925 sterling silver.",
-  "permalink": "https://www.facebook.com/122184886436978343/posts/122188690298978343",
-  "image": "/assets/latest/post.jpg?v=a03204b55e",
-  "image_w": 720,
-  "image_h": 900
+  "id": "753436947858142_122188796576978343",
+  "date": "2026-11-11T18:09:04Z",
+  "caption": "JAY STEEL JEWELRY @ St. Johns Fall Makers Market\n📅 Sat Nov 14 · 11 AM–2 PM\n📍 The Fountains at St. Johns, 175 Fountains Way, St Johns FL\nComing up this Saturday — come find us! Free event with local makers, coffee, desserts and live music, hosted by @jaxbizconnections + LindaJean Cafe & Cream.\nHypoallergenic and non-tarnish jewelry: 18K gold plating over stainless steel, gold-filled, and 925 sterling silver.",
+  "permalink": "https://www.facebook.com/122184886436978343/posts/122188796576978343",
+  "image": "/assets/latest/post.jpg?v=60f78e838d",
+  "image_w": 1080,
+  "image_h": 606
  }
 }
