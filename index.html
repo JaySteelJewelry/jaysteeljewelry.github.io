@@ -6,6 +6,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<meta name="color-scheme" content="dark light">
 	<meta name="theme-color" content="#0E0F11">
+	<!-- GitHub Pages cannot send headers, so the policy lives here. style-src needs 'unsafe-inline' only because /ptr.js injects its own small stylesheet. -->
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://raw.githubusercontent.com https://jaysteeljewelry.github.io; form-action 'none'">
 	<script src="/assets/theme-init.js?v=1"></script>
 	<link rel="icon" href="/favicon.ico" sizes="any">
 	<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
@@ -110,6 +112,7 @@
 			<h2 id="contact-h" class="blk__h">Contact</h2>
 			<div class="card ct">
 				<p class="ct__sub">Questions about a piece or an event? Write us and we’ll answer by email.</p>
+				<p class="cnote">Nothing is sent to or stored on this site: the form opens your own email app with the message ready to send.</p>
 				<form class="cform" id="cform" novalidate>
 					<div class="cfield"><label for="cf-name">Name</label><input id="cf-name" name="name" type="text" autocomplete="name" required maxlength="80"><span class="cerr" id="cf-name-err" role="alert"></span></div>
 					<div class="cfield"><label for="cf-email">Email</label><input id="cf-email" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="120"><span class="cerr" id="cf-email-err" role="alert"></span></div>

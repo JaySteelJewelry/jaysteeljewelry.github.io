@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#0E0F11">
+  <!-- Coming-soon page: no fetches, no ptr.js, no inline styles, so the policy needs neither connect-src nor 'unsafe-inline'. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'">
   <script src="/assets/theme-init.js?v=1"></script>
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
@@ -40,8 +42,11 @@
   </ul>
   <p class="smenu__foot">© 2026 JAY STEEL JEWELRY</p>
 </nav>
-<!-- Nov 6 2026 per Luis: the online shop is OFFLINE until inventory is loaded. The old shop page is in git history:
-     restore shop/index.html from commit eae71e8 (its scripts shop.js / checkout.js / products.json are still in this folder, unlinked). -->
+<!-- Nov 6 2026 per Luis: the online shop is OFFLINE until inventory is loaded. The old shop page is in git history
+     (commit eae71e8). Nov 23 2026: the bag and checkout were deleted, not just unlinked, because checkout.js built
+     the PayPal order total in the browser from shop/products.json, which a visitor can edit, and this static site
+     has no server to check prices. Reopening needs server-side order creation from a server-held price table
+     before any payment button ships. -->
 <main id="main" class="hm">
   <section class="hero" aria-labelledby="soon-h">
     <div class="hero__mark"><picture><source srcset="/assets/mark-steel.webp" type="image/webp"><img src="/assets/mark-steel.png" width="660" height="630" alt="JS chain-link logo"></picture></div>
