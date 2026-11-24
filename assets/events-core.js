@@ -42,7 +42,8 @@
   }
   function place(e, sep) {
     var city = cityOf(e);
-    var venue = String(e.venue || "").replace(/\s*\(.*?\)\s*/g, " ").replace(/\s+/g, " ").trim();
+    // "Riverwalk Artist Square (under the bridge), Riverside" -> "Riverwalk Artist Square, Riverside"
+    var venue = String(e.venue || "").replace(/\s*\(.*?\)\s*/g, " ").replace(/\s+/g, " ").replace(/\s+([,.;])/g, "$1").trim();
     // Don't print the venue twice when it just repeats the event name.
     if (!sep && venue && displayName(e.name).toLowerCase() === venue.toLowerCase()) venue = "";
     if (venue && city && venue.toLowerCase().indexOf(city.split(",")[0].toLowerCase()) !== -1) return venue + ", FL";

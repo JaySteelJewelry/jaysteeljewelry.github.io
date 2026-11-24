@@ -37,6 +37,11 @@ test("a clean feed passes through untouched and in order", () => {
   // A raw feed still carries the street address; place() shows only the city.
   assert.equal(core.place(valid[0]), "Riverside Artist Square · Jacksonville, FL");
   assert.doesNotMatch(core.place(valid[0]), /Riverside Ave/);
+  // Stripping a parenthetical must not leave a space before the comma it sat next to.
+  assert.equal(
+    core.place({ venue: "Riverwalk Artist Square (under the bridge), Riverside", city: "Jacksonville, FL" }),
+    "Riverwalk Artist Square, Riverside · Jacksonville, FL"
+  );
 });
 
 test("the projection turns a street address into a city and drops the street", async () => {

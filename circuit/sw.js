@@ -6,7 +6,7 @@ const SHELL = [
   "./",
   "circuit.css?v=4",
   "app.js?v=7",
-  "/assets/events-core.js?v=4",
+  "/assets/events-core.js?v=5",
   "/assets/mark-steel-96.png",
   "/assets/icon-192.png",
   "/assets/fonts/montserrat.woff2",
