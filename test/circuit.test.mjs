@@ -92,7 +92,7 @@ test("the service worker pre-caches the shell and keeps market data network-firs
   assert.match(sw, /clients\.claim/);
   assert.match(sw, /fetch\(req\)\.then/, "data is network-first");
   assert.match(sw, /caches\.match\(req\)/, "with a cached fallback");
-  for (const asset of ["circuit.css?v=4", "app.js?v=8", "/assets/events-core.js?v=6", "/assets/fonts/montserrat.woff2"]) {
+  for (const asset of ["circuit.css?v=4", "app.js?v=8", "/assets/events-core.js?v=7", "/assets/fonts/montserrat.woff2"]) {
     assert.ok(sw.includes(asset), "shell missing " + asset);
   }
 });

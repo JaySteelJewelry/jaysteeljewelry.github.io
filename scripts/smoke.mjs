@@ -48,6 +48,13 @@ async function check() {
     else if (!events.every((e) => e && e.id && e.date && e.city)) bad.push("an event is missing id, date or city");
   }
 
+  // /season.ics is built beside the feed: it must be a real calendar and carry the same no-street rule.
+  const season = await get("/season.ics");
+  if (season.status !== 200) bad.push(`/season.ics -> HTTP ${season.status}`);
+  else if (!season.body.startsWith("BEGIN:VCALENDAR")) bad.push("/season.ics is not a calendar");
+  else if (!/BEGIN:VEVENT/.test(season.body)) bad.push("/season.ics has no stops");
+  else if (/\b\d{1,6}\s+[A-Z][\w']*\s+(?:Way|St|Ave|Rd|Blvd|Dr|Ln|Ct|Pl|Pkwy)\b/.test(season.body)) bad.push("/season.ics carries a street address");
+
   // Every versioned asset the home page asks for must exist: a stale ?v= after a bump is a 404 for the site.
   const home = pages["/"].body || "";
   const assets = [...new Set([...home.matchAll(/(?:src|href)="([^"]+\?v=\d+)"/g)].map((m) => m[1]))];

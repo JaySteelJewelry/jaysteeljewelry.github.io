@@ -11,6 +11,7 @@
     "test": "node --test test/",
     "check:events": "node scripts/validate-events.mjs",
     "sync:events": "node scripts/sync-events.mjs",
+    "season:ics": "node scripts/season-ics.mjs",
     "seed": "node db/seed.mjs",
     "seed:print": "node db/seed.mjs --print"
   },

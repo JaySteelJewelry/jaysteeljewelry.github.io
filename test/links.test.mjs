@@ -83,6 +83,9 @@ test('add-to-calendar .ics is valid and address-free', () => {
 test('shell: title, viewport, OG image, local assets exist, no innerHTML', () => {
   assert.match(html, /<title>[^<]+<\/title>/);
   assert.match(html, /name="viewport" content="width=device-width/);
+  // The whole season is subscribable, and the page that lists the dates offers it.
+  assert.match(html, /<link rel="alternate" type="text\/calendar"[^>]*href="\/season\.ics"/);
+  assert.match(html, /href="\/season\.ics"/);
   assert.match(html, /property="og:image" content="https:\/\/jaysteeljewelry\.github\.io\/assets\/og-steel\.jpg"/);
   for (const m of html.matchAll(/(?:src|href|srcset)="(\/[^"?#]+)/g)) if (m[1] !== '/jaysteel-market-logistics-app/' && m[1] !== '/') assert.ok(existsSync(R + m[1].slice(1)), 'missing ' + m[1]);
   for (const m of html.matchAll(/(?:src|href)="([a-z][\w.-]+\.(?:js|css))/g)) assert.ok(existsSync(D + m[1]), 'missing ' + m[1]);

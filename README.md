@@ -11,6 +11,7 @@ Jacksonville, FL. Live: https://jaysteeljewelry.github.io — one home: Next mar
 - `assets/events-core.js` — **the** market rules (approval gate, never Hyatt Place, never Park Street, venue + city only, never a street address). Shared by the home page and `/links/`; before it, each page had its own copy and the two had drifted.
 - `assets/theme-init.js` + `assets/steel-nav.js` — theme applied before first paint; Dark / Light / Match phone saved in `localStorage` `jsj-theme`.
 - `contact.js` — Contact form builds a `mailto:` in the visitor's own mail app. No backend, nothing stored.
+- `season.ics` — the whole public season as one calendar subscription, linked from `/links/`. Built by `scripts/season-ics.mjs` from the same `assets/events-core.js` rules as the pages (approval gate, venue + city only, no street address) and rewritten by `npm run sync:events`; `test/events-data.test.mjs` byte-compares it against a fresh build, so it cannot drift from the feed.
 - `data/latest_post.json` + `assets/latest/post.jpg` — written by Tab's latest-post updater; with no file the page shows "Follow @JaySteelJewelry".
 - `scripts/sync_inventory.py` + `.github/workflows/shop-sync.yml` — POS → `shop/products.json`, still running for a future reopening.
 
@@ -96,21 +97,21 @@ Every workflow is pinned to commit SHAs, and `test/security.test.mjs` fails the 
 | Workflow | When | What |
 | --- | --- | --- |
 | `test.yml` | every push to `main`, every PR | `node --test test/` + `npm run check:events`. GitHub Pages publishes `main` directly, so this is the gate. |
-| `feed-sync.yml` | daily, and on demand | `npm run sync:events`: pull the season feed, validate it, project it, commit only when clean. |
-| `smoke.yml` | after Pages publishes, daily, and on demand | `node scripts/smoke.mjs`: asks the live origin, not the repo — every page 200, the feed parses with `city` and no `address`, every `?v=` asset the home page asks for exists, a missing path is a 404, and the live home page is on the published commit's asset version. Retries for ~2 min because Pages takes a moment to publish. |
+| `feed-sync.yml` | daily, and on demand | `npm run sync:events`: pull the season feed, validate it, project it, rewrite `season.ics`, commit only when clean. |
+| `smoke.yml` | every push to `main`, daily, and on demand | `node scripts/smoke.mjs`: asks the live origin, not the repo — every page 200, the feed parses with `city` and no `address`, `season.ics` is a calendar with stops and no street, every `?v=` asset the home page asks for exists, a missing path is a 404, and the live home page is on the published commit's asset version. Triggered by the push itself (not by GitHub's internal Pages workflow name) and retries for ~2 min while Pages publishes. |
 | `shop-sync.yml` | every 30 min | POS → `shop/products.json`, skipped until the POS key is set. |
 
 **The feed is served from this repo.** `data/events.json` is a *projection*: only the fields the pages render (id, name, series, kind, status, paid, dates and times, venue, city) plus feed-level `updated`/`timezone`. Notes, fees, contacts, application state and next steps stay in the logistics repo — `scripts/feed-projection.mjs` is the single list, and `test/events-data.test.mjs` fails if anything else appears. Street addresses don't ship either: the sync turns the upstream `address` into `city` once, so the public file says `"Jacksonville, FL"` and nothing more.
 
 `npm run sync:events` does the same thing by hand (and is what the cron runs), with `EVENTS_SOURCE=<url>` to point at a different upstream. A failed validation writes nothing.
 
-`node scripts/smoke.mjs` runs the live check locally (`SMOKE_ORIGIN=…` for another host); it is what `smoke.yml` runs after a deploy.
+`node scripts/smoke.mjs` runs the live check locally (`SMOKE_ORIGIN=…` for another host); it is what `smoke.yml` runs after a deploy. `npm run season:ics` rebuilds only the subscription (the sync does both).
 
 ## Local development
 
 ```bash
 npm start          # http://localhost:8787 — the site and /api/* on one origin
-npm test           # node --test test/ (59 tests, no network)
+npm test           # node --test test/ (61 tests, no network)
 node db/seed.mjs --print --file products.json   # inspect seed rows without a database
 ```
 

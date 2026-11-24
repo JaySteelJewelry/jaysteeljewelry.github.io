@@ -78,9 +78,11 @@
     return shortDate(e.date) + " – " + shortDate(last);
   }
 
-  /* The rule for what the public sees. */
-  function pickEvents(data, now, approved) {
+  /* The rule for what the public sees. `includePast` exists for /season.ics: the subscription lists the
+     whole season, not only the days still ahead, so the file depends on the feed and not on the clock. */
+  function pickEvents(data, now, approved, opts) {
     now = now || nowET();
+    var includePast = !!(opts && opts.includePast);
     var ok = {}; (Array.isArray(approved) ? approved : (approved && approved.ids) || []).forEach(function (x) { ok[String(x)] = 1; });
     var list = Array.isArray(data) ? data : (data && Array.isArray(data.events) ? data.events : []);
     var seen = {};
@@ -93,8 +95,10 @@
       if (/declined|cancel/.test(st) || SHOW_STATUSES.indexOf(st) === -1) return false;
       if (EXCLUDE.test([e.name, e.venue, e.address, e.city, e.series, e.id].join(" "))) return false;
       var last = isDate(e.endDate) ? e.endDate : e.date;
-      if (last < now.date) return false;
-      if (last === now.date && isTime(e.end) && e.end <= now.time) return false;
+      if (!includePast) {
+        if (last < now.date) return false;
+        if (last === now.date && isTime(e.end) && e.end <= now.time) return false;
+      }
       var key = e.id || (e.date + e.name);
       if (seen[key]) return false; seen[key] = 1;
       return true;
@@ -156,6 +160,21 @@
     return clean.valid;
   }
 
+  /* RFC 5545: a content line is at most 75 octets, and longer ones continue on a line that starts with a
+     single space. Counted in UTF-8 bytes, so a folded em dash is never split in half. Some clients
+     (Outlook, older Apple Calendar) refuse a file that skips this step. */
+  function foldLine(line) {
+    var enc = new TextEncoder();
+    if (enc.encode(line).length <= 75) return line;
+    var out = [], cur = "", n = 0;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line.charAt(i), b = enc.encode(ch).length;
+      if (n + b > 74) { out.push(cur); cur = ""; n = 0; }
+      cur += ch; n += b;
+    }
+    out.push(cur);
+    return out.join("\r\n ");
+  }
   function icsEsc(s) { return String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n"); }
   function addDays(d, n) { var x = new Date(d + "T12:00:00Z"); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); }
   function compact(d) { return d.replace(/-/g, ""); }
@@ -164,16 +183,23 @@
 
   var LINKS_PAGE = "https://jaysteeljewelry.github.io/links/";
 
-  /* One .ics builder for /links/ and the Circuit app: venue + city only, no street address, Eastern time. */
-  function buildICS(e, page) {
-    var link = page || LINKS_PAGE;
-    var name = displayName(e.name), last = isDate(e.endDate) ? e.endDate : e.date, timed = isTime(e.start) && isTime(e.end);
-    var L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//JAY STEEL JEWELRY//Find us at//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
-    if (timed) L.push("BEGIN:VTIMEZONE", "TZID:America/New_York",
+  /* Calendar files for /links/, the Circuit app and /season.ics: venue + city only, no street address,
+     Eastern time. A VCALENDAR may carry exactly one VTIMEZONE, so the block belongs to whoever owns the
+     file, not to each event — one builder for a single stop, and buildSeasonICS for the whole season. */
+  function headLines() {
+    return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//JAY STEEL JEWELRY//Find us at//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
+  }
+  function tzBlock() {
+    return ["BEGIN:VTIMEZONE", "TZID:America/New_York",
       "BEGIN:DAYLIGHT", "TZOFFSETFROM:-0500", "TZOFFSETTO:-0400", "TZNAME:EDT", "DTSTART:19700308T020000", "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU", "END:DAYLIGHT",
       "BEGIN:STANDARD", "TZOFFSETFROM:-0400", "TZOFFSETTO:-0500", "TZNAME:EST", "DTSTART:19701101T020000", "RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU", "END:STANDARD",
-      "END:VTIMEZONE");
-    L.push("BEGIN:VEVENT", "UID:" + icsEsc(String(e.id || compact(e.date) + "-" + name.replace(/\W+/g, "-").toLowerCase())) + "@jaysteeljewelry.github.io", "DTSTAMP:" + stamp());
+      "END:VTIMEZONE"];
+  }
+  /** The VEVENT for one stop. dtstamp keeps a generated file byte-stable when nothing else changed. */
+  function eventLines(e, page, dtstamp) {
+    var link = page || LINKS_PAGE;
+    var name = displayName(e.name), last = isDate(e.endDate) ? e.endDate : e.date, timed = isTime(e.start) && isTime(e.end);
+    var L = ["BEGIN:VEVENT", "UID:" + icsEsc(String(e.id || compact(e.date) + "-" + name.replace(/\W+/g, "-").toLowerCase())) + "@jaysteeljewelry.github.io", "DTSTAMP:" + (dtstamp || stamp())];
     if (timed) {
       L.push("DTSTART;TZID=America/New_York:" + compact(e.date) + "T" + e.start.replace(":", "").padStart(4, "0") + "00",
              "DTEND;TZID=America/New_York:" + compact(e.date) + "T" + e.end.replace(":", "").padStart(4, "0") + "00");
@@ -183,8 +209,26 @@
     }
     L.push("SUMMARY:" + icsEsc("JAY STEEL JEWELRY at " + name), "LOCATION:" + icsEsc(place(e, ", ")),
       "DESCRIPTION:" + icsEsc("Come find JAY STEEL JEWELRY at " + name + ". All our links: " + link), "URL:" + link,
-      "END:VEVENT", "END:VCALENDAR");
-    return L.join("\r\n") + "\r\n";
+      "END:VEVENT");
+    return L;
+  }
+  function buildICS(e, page) {
+    var L = headLines().concat(isTime(e.start) && isTime(e.end) ? tzBlock() : [], eventLines(e, page), ["END:VCALENDAR"]);
+    return L.map(foldLine).join("\r\n") + "\r\n";
+  }
+  /** The whole season as one subscribable calendar — the file behind /season.ics. */
+  function buildSeasonICS(events, page, dtstamp) {
+    var list = (Array.isArray(events) ? events : []).filter(function (e) { return e && isDate(e.date); });
+    var L = headLines().concat([
+      "X-WR-CALNAME:JAY STEEL JEWELRY — the season",
+      "X-WR-CALDESC:Every public JAY STEEL JEWELRY market and pop-up in the season feed.",
+      "X-PUBLISHED-TTL:PT12H",
+      "REFRESH-INTERVAL;VALUE=DURATION:PT12H",
+    ]);
+    if (list.some(function (e) { return isTime(e.start) && isTime(e.end); })) L = L.concat(tzBlock());
+    list.forEach(function (e) { L = L.concat(eventLines(e, page, dtstamp)); });
+    L.push("END:VCALENDAR");
+    return L.map(foldLine).join("\r\n") + "\r\n";
   }
 
   function googleURL(e, page) {
@@ -203,7 +247,7 @@
     nowET: nowET, isDate: isDate, isTime: isTime, realDate: realDate, realTime: realTime, validateEvents: validateEvents, usableEvents: usableEvents,
     displayName: displayName, cityOf: cityOf, place: place,
     fmtTime: fmtTime, hours: hours, dateRange: dateRange, shortDate: shortDate, pickEvents: pickEvents,
-    icsEsc: icsEsc, addDays: addDays, compact: compact, daysBetween: daysBetween,
-    buildICS: buildICS, googleURL: googleURL
+    icsEsc: icsEsc, foldLine: foldLine, addDays: addDays, compact: compact, daysBetween: daysBetween,
+    buildICS: buildICS, buildSeasonICS: buildSeasonICS, googleURL: googleURL
   };
 });

@@ -1,12 +1,12 @@
 /* THE CIRCUIT service worker — the app shell is cached so the season opens instantly and works with no
    signal (markets are outdoors; the wifi is not). The market data itself is network-first, with the last
    good copy kept as the offline fallback. */
-const VERSION = "jsj-circuit-v8";
+const VERSION = "jsj-circuit-v9";
 const SHELL = [
   "./",
   "circuit.css?v=4",
   "app.js?v=8",
-  "/assets/events-core.js?v=6",
+  "/assets/events-core.js?v=7",
   "/assets/mark-steel-96.png",
   "/assets/icon-192.png",
   "/assets/fonts/montserrat.woff2",

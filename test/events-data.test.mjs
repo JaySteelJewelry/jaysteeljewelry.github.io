@@ -137,6 +137,55 @@ test("the feed lives in this repo and every page reads it first", () => {
   assert.match(rd("circuit/sw.js"), /\\\/data\\\/\(events\|approved_events\)\\\.json\$/, "worker treats data/*.json as data");
 });
 
+test("the season calendar holds every public stop, one timezone, no streets", async () => {
+  const { seasonICS } = await import("../scripts/season-ics.mjs");
+  const feed = {
+    updated: "2026-11-09",
+    events: [
+      good({ id: "a", date: "2026-12-13" }),
+      good({ id: "b", date: "2026-12-20", endDate: "2026-12-21" }),
+      good({ id: "c", date: "2026-12-27", venue: "Hyatt Place", address: "4742 Town Center Pkwy, Jacksonville, FL" }),
+      good({ id: "d", date: "2026-12-28", status: "pending", paid: false }),      // allowlisted but not confirmed
+      good({ id: "park-street-2026-12-29", name: "Park Street Market", date: "2026-12-29" }), // Luis said no
+      good({ id: "old", date: "2026-10-18" }),                                    // past, but part of the season
+    ],
+  };
+  const ics = seasonICS(feed, { ids: ["a", "b", "c", "d", "park-street-2026-12-29", "old"] });
+
+  assert.match(ics, /^BEGIN:VCALENDAR\r\n/);
+  assert.match(ics, /END:VCALENDAR\r\n$/);
+  assert.equal((ics.match(/BEGIN:VCALENDAR/g) || []).length, 1, "one calendar, not one per stop");
+  assert.equal((ics.match(/BEGIN:VTIMEZONE/g) || []).length, 1, "a calendar carries exactly one timezone block");
+  assert.equal((ics.match(/BEGIN:VEVENT/g) || []).length, 3, "allowlisted, confirmed stops only");
+  assert.match(ics, /UID:a@jaysteeljewelry\.github\.io/);
+  assert.match(ics, /UID:old@jaysteeljewelry\.github\.io/, "the subscription is the season, not just the remainder");
+  assert.doesNotMatch(ics, /Hyatt|Park Street|Town Center Pkwy|4742/);
+  assert.match(ics, /RRULE:FREQ=DAILY;COUNT=2/, "a multi-day stop keeps its span");
+  assert.match(ics, /DTSTAMP:20261109T120000Z/, "the feed's own date, so an unchanged feed builds the same file");
+  assert.doesNotMatch(ics, /\d{1,6}\s+[A-Z][\w']*\s+(?:Way|St|Ave|Rd)\b/, "no street address in a calendar file");
+  // RFC 5545 caps a content line at 75 octets, and unfolding must give back exactly what was written.
+  assert.deepEqual(ics.split("\r\n").filter((l) => Buffer.byteLength(l, "utf8") > 75), []);
+  assert.match(ics.replace(/\r\n[ \t]/g, ""), /DESCRIPTION:Come find JAY STEEL JEWELRY at Riverside Fall Market\. All our links:/);
+});
+
+test("the committed season.ics is exactly what the feed builds", async () => {
+  // A static subscription is a generated file; this is the guard that stops it drifting from the feed.
+  const { seasonICS, readApproved } = await import("../scripts/season-ics.mjs");
+  const feed = JSON.parse(rd("data/events.json"));
+  assert.equal(rd("season.ics"), seasonICS(feed, readApproved()), "run `npm run season:ics` after a feed change");
+
+  const ics = rd("season.ics");
+  const ids = [...ics.matchAll(/^UID:(.+?)@jaysteeljewelry\.github\.io$/gm)].map((m) => m[1]);
+  assert.ok(ids.length >= 1, "a season with no stops is not a usable subscription");
+  assert.equal(new Set(ids).size, ids.length, "every stop has its own UID");
+
+  assert.deepEqual(ics.split("\r\n").filter((l) => Buffer.byteLength(l, "utf8") > 75), [], "RFC 5545: fold long lines");
+  const publicIds = new Set(core.pickEvents(core.usableEvents(feed), null, readApproved(), { includePast: true }).map((e) => String(e.id)));
+  for (const id of ids) assert.ok(publicIds.has(id), id + " is not a public stop");
+  const next = core.pickEvents(core.usableEvents(feed), null, readApproved())[0];
+  assert.ok(!next || ids.includes(String(next.id)), "the next visible stop must be in the subscription");
+});
+
 test("the published feed carries only public fields", async () => {
   // data/events.json is served from this repo, so the internal working rows stay upstream.
   const { PUBLIC_FIELDS, META_FIELDS } = await import("../scripts/feed-projection.mjs");

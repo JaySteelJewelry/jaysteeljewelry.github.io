@@ -1,0 +1,128 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//JAY STEEL JEWELRY//Find us at//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:JAY STEEL JEWELRY — the season
+X-WR-CALDESC:Every public JAY STEEL JEWELRY market and pop-up in the seaso
+ n feed.
+X-PUBLISHED-TTL:PT12H
+REFRESH-INTERVAL;VALUE=DURATION:PT12H
+BEGIN:VTIMEZONE
+TZID:America/New_York
+BEGIN:DAYLIGHT
+TZOFFSETFROM:-0500
+TZOFFSETTO:-0400
+TZNAME:EDT
+DTSTART:19700308T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:-0400
+TZOFFSETTO:-0500
+TZNAME:EST
+DTSTART:19701101T020000
+RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:unf-tabling-2026-10-28@jaysteeljewelry.github.io
+DTSTAMP:20261109T120000Z
+DTSTART;TZID=America/New_York:20261028T100000
+DTEND;TZID=America/New_York:20261028T153000
+SUMMARY:JAY STEEL JEWELRY at UNF Tabling
+LOCATION:University of North Florida\, Jacksonville\, FL
+DESCRIPTION:Come find JAY STEEL JEWELRY at UNF Tabling. All our links: htt
+ ps://jaysteeljewelry.github.io/season.ics
+URL:https://jaysteeljewelry.github.io/season.ics
+END:VEVENT
+BEGIN:VEVENT
+UID:dart-bar-2026-10-30@jaysteeljewelry.github.io
+DTSTAMP:20261109T120000Z
+DTSTART;TZID=America/New_York:20261030T190000
+DTEND;TZID=America/New_York:20261030T220000
+SUMMARY:JAY STEEL JEWELRY at Dart Bar King Street Bazaar
+LOCATION:Dart Bar & Games\, Jacksonville\, FL
+DESCRIPTION:Come find JAY STEEL JEWELRY at Dart Bar King Street Bazaar. Al
+ l our links: https://jaysteeljewelry.github.io/season.ics
+URL:https://jaysteeljewelry.github.io/season.ics
+END:VEVENT
+BEGIN:VEVENT
+UID:unf-tabling-2026-11-03@jaysteeljewelry.github.io
+DTSTAMP:20261109T120000Z
+DTSTART;TZID=America/New_York:20261103T100000
+DTEND;TZID=America/New_York:20261103T153000
+SUMMARY:JAY STEEL JEWELRY at UNF Tabling
+LOCATION:University of North Florida — campus green area\, Jacksonville\
+ , FL
+DESCRIPTION:Come find JAY STEEL JEWELRY at UNF Tabling. All our links: htt
+ ps://jaysteeljewelry.github.io/season.ics
+URL:https://jaysteeljewelry.github.io/season.ics
+END:VEVENT
+BEGIN:VEVENT
+UID:unf-market-day-2026-11-04@jaysteeljewelry.github.io
+DTSTAMP:20261109T120000Z
+DTSTART;TZID=America/New_York:20261104T100000
+DTEND;TZID=America/New_York:20261104T130000
+SUMMARY:JAY STEEL JEWELRY at UNF Market Day
+LOCATION:University of North Florida — Osprey Plaza\, Jacksonville\, FL
+DESCRIPTION:Come find JAY STEEL JEWELRY at UNF Market Day. All our links: 
+ https://jaysteeljewelry.github.io/season.ics
+URL:https://jaysteeljewelry.github.io/season.ics
+END:VEVENT
+BEGIN:VEVENT
+UID:jbcc-riverside-fall-2026-11-08@jaysteeljewelry.github.io
+DTSTAMP:20261109T120000Z
+DTSTART;TZID=America/New_York:20261108T110000
+DTEND;TZID=America/New_York:20261108T150000
+SUMMARY:JAY STEEL JEWELRY at Riverside Fall Market
+LOCATION:Riverside Artist Square\, Jacksonville\, FL
+DESCRIPTION:Come find JAY STEEL JEWELRY at Riverside Fall Market. All our 
+ links: https://jaysteeljewelry.github.io/season.ics
+URL:https://jaysteeljewelry.github.io/season.ics
+END:VEVENT
+BEGIN:VEVENT
+UID:st-johns-fall-makers-2026-11-14@jaysteeljewelry.github.io
+DTSTAMP:20261109T120000Z
+DTSTART;TZID=America/New_York:20261114T110000
+DTEND;TZID=America/New_York:20261114T140000
+SUMMARY:JAY STEEL JEWELRY at St. Johns Fall Makers Market
+LOCATION:The Fountains at St. Johns\, St Johns\, FL
+DESCRIPTION:Come find JAY STEEL JEWELRY at St. Johns Fall Makers Market. A
+ ll our links: https://jaysteeljewelry.github.io/season.ics
+URL:https://jaysteeljewelry.github.io/season.ics
+END:VEVENT
+BEGIN:VEVENT
+UID:unf-market-day-2026-11-18@jaysteeljewelry.github.io
+DTSTAMP:20261109T120000Z
+DTSTART;TZID=America/New_York:20261118T100000
+DTEND;TZID=America/New_York:20261118T130000
+SUMMARY:JAY STEEL JEWELRY at UNF Market Day
+LOCATION:University of North Florida — Osprey Plaza\, Jacksonville\, FL
+DESCRIPTION:Come find JAY STEEL JEWELRY at UNF Market Day. All our links: 
+ https://jaysteeljewelry.github.io/season.ics
+URL:https://jaysteeljewelry.github.io/season.ics
+END:VEVENT
+BEGIN:VEVENT
+UID:mayport-2026-11-21@jaysteeljewelry.github.io
+DTSTAMP:20261109T120000Z
+DTSTART;TZID=America/New_York:20261121T100000
+DTEND;TZID=America/New_York:20261121T140000
+SUMMARY:JAY STEEL JEWELRY at Mayport Village Waterfront Market
+LOCATION:Mayport Village\, Jacksonville\, FL
+DESCRIPTION:Come find JAY STEEL JEWELRY at Mayport Village Waterfront Mark
+ et. All our links: https://jaysteeljewelry.github.io/season.ics
+URL:https://jaysteeljewelry.github.io/season.ics
+END:VEVENT
+BEGIN:VEVENT
+UID:holly-jolly-2026-12-13@jaysteeljewelry.github.io
+DTSTAMP:20261109T120000Z
+DTSTART;TZID=America/New_York:20261213T110000
+DTEND;TZID=America/New_York:20261213T150000
+SUMMARY:JAY STEEL JEWELRY at Jacksonville Holly Jolly Community Event
+LOCATION:Riverwalk Artist Square\, Riverside\, Jacksonville\, FL
+DESCRIPTION:Come find JAY STEEL JEWELRY at Jacksonville Holly Jolly Commun
+ ity Event. All our links: https://jaysteeljewelry.github.io/season.ics
+URL:https://jaysteeljewelry.github.io/season.ics
+END:VEVENT
+END:VCALENDAR

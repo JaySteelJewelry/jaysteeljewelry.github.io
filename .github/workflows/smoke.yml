@@ -1,13 +1,17 @@
 name: Live site smoke
-# After GitHub Pages publishes main, and once a day: ask the real origin — not the repo — whether the
-# site a visitor loads is the one we built. Catches a Pages outage, a half-finished push, a stale ?v=
-# asset and a street address leaking into the public feed. `node scripts/smoke.mjs` runs the same test.
+# After every push to main, and once a day: ask the real origin — not the repo — whether the site a
+# visitor loads is the one we built. Catches a Pages outage, a half-finished push, a stale ?v= asset and
+# a street address leaking into the public feed or the season calendar.
+#
+# The trigger is a push on purpose. It used to listen for GitHub's internal Pages workflow ("pages build
+# and deployment"), which is an implementation detail of the hosting: rename it and this check would stop
+# running without a single failure. The commit is published within a minute or so; scripts/smoke.mjs
+# retries for two minutes, so a normal deploy delay is not a red run.
 on:
-  workflow_run:
-    workflows: ["pages build and deployment"]
-    types: [completed]
+  push:
+    branches: [main]
   schedule:
-    - cron: "23 13 * * *" # one hour after the feed sync, so a fresh feed is checked too
+    - cron: "23 13 * * *" # an hour after the feed sync, so a fresh feed is checked too
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,9 +24,6 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          # The check compares the live page with the commit that was published, not with main's tip.
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "20"

@@ -6,12 +6,14 @@
 import { writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { project } from "./feed-projection.mjs";
+import { seasonICS, readApproved } from "./season-ics.mjs";
 
 const core = createRequire(import.meta.url)("../assets/events-core.js");
 const UPSTREAM =
   process.env.EVENTS_SOURCE ||
   "https://raw.githubusercontent.com/JaySteelJewelry/jaysteel-market-logistics-app/main/data/events.json";
 const OUT = new URL("../data/events.json", import.meta.url);
+const ICS = new URL("../season.ics", import.meta.url);
 
 try {
   const res = await fetch(UPSTREAM);
@@ -28,6 +30,10 @@ try {
   if (again.problems.length) throw new Error("the projected feed failed validation — nothing written");
   await writeFile(OUT, JSON.stringify(publicFeed, null, 2) + "\n");
   console.log(`\n  wrote data/events.json — ${published.length} events, 0 problems, public fields only`);
+  // The subscription is written from the same feed, in the same run, so it can never lag behind it.
+  const ics = seasonICS(publicFeed, readApproved());
+  await writeFile(ICS, ics);
+  console.log(`  wrote season.ics — ${(ics.match(/BEGIN:VEVENT/g) || []).length} public stops`);
 } catch (err) {
   console.error(`✖ ${err.message}`);
   process.exitCode = 1;

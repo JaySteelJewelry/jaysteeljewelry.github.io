@@ -26,7 +26,7 @@ jobs:
         run: npm run check:events
       - name: Commit if the season changed
         run: |
-          git add data/events.json
+          git add data/events.json season.ics
           if git diff --cached --quiet; then echo "Feed unchanged."; exit 0; fi
           git config user.name "jaysteel-feed-sync"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
