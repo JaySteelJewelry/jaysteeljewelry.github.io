@@ -40,8 +40,9 @@
     body.appendChild(el("span", "ev__badge", "Next up"));
     var name = core.displayName(e.name);
     body.appendChild(el("h3", "ev__name", name));
-    var when = DOW[d.getUTCDay()] + ", " + MONTHS[d.getUTCMonth()].slice(0, 3) + " " + d.getUTCDate();
-    if (core.isDate(e.endDate) && e.endDate !== e.date) { var d2 = new Date(e.endDate + "T12:00:00Z"); when += " – " + MONTHS[d2.getUTCMonth()].slice(0, 3) + " " + d2.getUTCDate(); }
+    // "Sun, Dec 13" or, for a multi-day stop, "Sun, Dec 13 – Tue, Dec 15" from the shared module.
+    var when = core.dateRange(e);
+    if (when !== core.shortDate(e.date)) body.appendChild(el("p", "ev__meta", when));
     var sr = el("span", "visually-hidden"); sr.textContent = when + ". ";
     var meta = el("p", "ev__meta", core.hours(e)); meta.insertBefore(sr, meta.firstChild);
     body.appendChild(meta);

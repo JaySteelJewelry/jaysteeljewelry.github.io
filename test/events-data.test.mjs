@@ -86,6 +86,21 @@ test("entries that would corrupt the season are dropped and reported", () => {
   }
 });
 
+test("a multi-day stop reads as a range, a one-day stop as a single date", () => {
+  // One shared formatter: the home card, /links/ and the Circuit app must not disagree about the run.
+  assert.equal(core.dateRange(good()), "Sun, Dec 13");
+  assert.equal(core.dateRange(good({ endDate: "2026-12-13" })), "Sun, Dec 13", "a same-day endDate is not a range");
+  assert.equal(core.dateRange(good({ endDate: "2026-12-15" })), "Sun, Dec 13 – Tue, Dec 15");
+  assert.equal(core.dateRange(good({ date: "2026-12-31", endDate: "2027-01-01" })), "Thu, Dec 31, 2026 – Fri, Jan 1, 2027", "across a year both years are printed");
+  assert.equal(core.dateRange(good({ endDate: "2026-12-01" })), "Sun, Dec 13", "a reversed endDate never widens the range");
+  assert.equal(core.dateRange({}), "");
+
+  // The calendar files carry the same multi-day span, so the button and the page agree.
+  assert.match(core.buildICS(good({ endDate: "2026-12-15" })), /RRULE:FREQ=DAILY;COUNT=3/);
+  assert.match(core.googleURL(good({ endDate: "2026-12-15" })), /dates=20261213\/20261216/, "a multi-day stop is all-day on Google");
+  assert.match(core.googleURL(good()), /dates=20261213T110000\/20261213T150000/, "a one-day stop keeps its hours");
+});
+
 test("multi-day stops may end earlier in the day than they start", () => {
   const { valid, problems } = core.validateEvents([good({ start: "18:00", end: "12:00", endDate: "2026-12-14" })]);
   assert.deepEqual(problems, []);

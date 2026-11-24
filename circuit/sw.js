@@ -5,8 +5,8 @@ const VERSION = "jsj-circuit-v7";
 const SHELL = [
   "./",
   "circuit.css?v=4",
-  "app.js?v=7",
-  "/assets/events-core.js?v=5",
+  "app.js?v=8",
+  "/assets/events-core.js?v=6",
   "/assets/mark-steel-96.png",
   "/assets/icon-192.png",
   "/assets/fonts/montserrat.woff2",

@@ -97,17 +97,20 @@ Every workflow is pinned to commit SHAs, and `test/security.test.mjs` fails the 
 | --- | --- | --- |
 | `test.yml` | every push to `main`, every PR | `node --test test/` + `npm run check:events`. GitHub Pages publishes `main` directly, so this is the gate. |
 | `feed-sync.yml` | daily, and on demand | `npm run sync:events`: pull the season feed, validate it, project it, commit only when clean. |
+| `smoke.yml` | after Pages publishes, daily, and on demand | `node scripts/smoke.mjs`: asks the live origin, not the repo — every page 200, the feed parses with `city` and no `address`, every `?v=` asset the home page asks for exists, a missing path is a 404, and the live home page is on the published commit's asset version. Retries for ~2 min because Pages takes a moment to publish. |
 | `shop-sync.yml` | every 30 min | POS → `shop/products.json`, skipped until the POS key is set. |
 
 **The feed is served from this repo.** `data/events.json` is a *projection*: only the fields the pages render (id, name, series, kind, status, paid, dates and times, venue, city) plus feed-level `updated`/`timezone`. Notes, fees, contacts, application state and next steps stay in the logistics repo — `scripts/feed-projection.mjs` is the single list, and `test/events-data.test.mjs` fails if anything else appears. Street addresses don't ship either: the sync turns the upstream `address` into `city` once, so the public file says `"Jacksonville, FL"` and nothing more.
 
 `npm run sync:events` does the same thing by hand (and is what the cron runs), with `EVENTS_SOURCE=<url>` to point at a different upstream. A failed validation writes nothing.
 
+`node scripts/smoke.mjs` runs the live check locally (`SMOKE_ORIGIN=…` for another host); it is what `smoke.yml` runs after a deploy.
+
 ## Local development
 
 ```bash
 npm start          # http://localhost:8787 — the site and /api/* on one origin
-npm test           # node --test test/ (58 tests, no network)
+npm test           # node --test test/ (59 tests, no network)
 node db/seed.mjs --print --file products.json   # inspect seed rows without a database
 ```
 

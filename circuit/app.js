@@ -41,7 +41,7 @@
       "Could you bring “" + piece + "” to " + name + "?",
       "",
       "Stop: " + name,
-      "When: " + e.date + (core.isTime(e.start) && core.isTime(e.end) ? " · " + core.hours(e) + " ET" : ""),
+      "When: " + core.dateRange(e) + (core.isTime(e.start) && core.isTime(e.end) ? " · " + core.hours(e) + " ET" : ""),
       "Where: " + (core.place(e) || "Jacksonville, FL"),
       "",
       "Thanks!",
@@ -194,9 +194,11 @@
     cdEl.hidden = false;
     name.textContent = core.displayName(e.name);
     meta.textContent = "";
-    var place = core.place(e);
+    var place = core.place(e), bits = [];
     if (place) meta.appendChild(el("b", null, place));
-    if (core.isTime(e.start) && core.isTime(e.end)) meta.appendChild(document.createTextNode((place ? " · " : "") + core.hours(e) + " ET"));
+    if (core.isDate(e.endDate) && e.endDate !== e.date) bits.push(core.dateRange(e));
+    if (core.isTime(e.start) && core.isTime(e.end)) bits.push(core.hours(e) + " ET");
+    if (bits.length) meta.appendChild(document.createTextNode((place ? " · " : "") + bits.join(" · ")));
     acts.appendChild(calLink(e)); acts.appendChild(dirLink(e)); acts.appendChild(saveBtn(e, sr)); acts.appendChild(shareBtn(e, sr));
     tick();
   }
@@ -223,6 +225,7 @@
     var body = el("div", "stub__body");
     if (isNext) body.appendChild(el("span", "stub__flag", "Next"));
     body.appendChild(el("h3", "stub__name", core.displayName(e.name)));
+    if (core.isDate(e.endDate) && e.endDate !== e.date) body.appendChild(el("p", "stub__meta", core.dateRange(e)));
     var place = core.place(e);
     if (place) body.appendChild(el("p", "stub__meta", place));
     body.appendChild(el("p", "stub__meta", core.hours(e) + " ET"));
@@ -258,7 +261,7 @@
       var row = el("div", "mine__row");
       var text = el("div");
       text.appendChild(el("div", "mine__t", core.displayName(e.name)));
-      text.appendChild(el("div", "mine__s", e.date + " · " + (core.place(e) || "Jacksonville, FL")));
+      text.appendChild(el("div", "mine__s", core.dateRange(e) + " · " + (core.place(e) || "Jacksonville, FL")));
       var x = el("button", "mine__x", "×");
       x.type = "button";
       x.setAttribute("aria-label", "Remove " + core.displayName(e.name) + " from my season");

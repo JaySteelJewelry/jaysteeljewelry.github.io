@@ -50,6 +50,14 @@ test('next market: same public rule, venue + city only', () => {
 
 test('latest post: caption never shows a store link; data file shape', () => {
   assert.equal(home.cleanCaption('Today!\n\nShop online: https://jaysteeljewelry.square.site\nAll our links: https://jaysteeljewelry.github.io/links/\n\n#a #b'), 'Today!');
+  // A caption is typed by hand on Facebook, so it can carry the venue's street address. The card keeps
+  // the venue and town and drops the house number, exactly like the feed does.
+  const caption = home.cleanCaption('JAY STEEL @ St. Johns Fall Makers Market\n📅 Sat Nov 14 · 11 AM–2 PM\n📍 The Fountains at St. Johns, 175 Fountains Way, St Johns FL\nCome find us!');
+  assert.doesNotMatch(caption, /175|Fountains Way/);
+  assert.match(caption, /The Fountains at St. Johns, St Johns FL/);
+  assert.match(caption, /Sat Nov 14 · 11 AM–2 PM/, 'a time is not mistaken for an address');
+  assert.match(home.cleanCaption('18K gold plating over 316L stainless steel'), /316L stainless steel/);
+  assert.equal(home.cleanCaption('📍 175 Fountains Way'), '', 'a line that was only the address is dropped');
   assert.match(js, /Follow @JaySteelJewelry/);
   assert.match(js, /cache: "no-store"/);
   assert.ok(!/textContent = [^;]*innerHTML/.test(js));
@@ -57,6 +65,8 @@ test('latest post: caption never shows a store link; data file shape', () => {
     const d = JSON.parse(rd('data/latest_post.json'));
     assert.ok(d.latest && /^https:\/\//.test(d.latest.permalink));
     assert.doesNotMatch(JSON.stringify(d.latest), /square/i);
+    // The committed caption is the live case: it carries "175 Fountains Way", the card must not.
+    assert.doesNotMatch(home.cleanCaption(d.latest.caption), /\d+\s+[A-Z][\w']*\s+(?:Way|St|Ave|Rd|Blvd|Dr|Ln|Ct|Pl|Pkwy)\b/);
     if (d.latest.image) assert.ok(existsSync(R + d.latest.image.split('?')[0].slice(1)), 'latest image missing');
   }
 });

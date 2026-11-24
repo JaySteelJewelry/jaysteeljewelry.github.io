@@ -59,6 +59,25 @@
     return "Hours to be announced";
   }
 
+  /* Calendar dates for the page: "Sun, Dec 13", or "Sun, Dec 13 – Tue, Dec 15" for a multi-day stop.
+     A one-day event reads exactly as it always did — the range appears only when endDate says so, so
+     the home card, /links/ and the Circuit app cannot disagree about how long a stop runs. */
+  var DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function shortDate(d) {
+    var x = new Date(d + "T12:00:00Z");
+    return DOW[x.getUTCDay()] + ", " + MON[x.getUTCMonth()] + " " + x.getUTCDate();
+  }
+  function dateRange(e) {
+    if (!e || !isDate(e.date)) return "";
+    var last = isDate(e.endDate) ? e.endDate : e.date;
+    if (last <= e.date) return shortDate(e.date);
+    var a = new Date(e.date + "T12:00:00Z"), b = new Date(last + "T12:00:00Z");
+    // Across a year boundary "Jan 2" alone would read as the past, so both years are printed.
+    if (a.getUTCFullYear() !== b.getUTCFullYear()) return shortDate(e.date) + ", " + a.getUTCFullYear() + " – " + shortDate(last) + ", " + b.getUTCFullYear();
+    return shortDate(e.date) + " – " + shortDate(last);
+  }
+
   /* The rule for what the public sees. */
   function pickEvents(data, now, approved) {
     now = now || nowET();
@@ -171,7 +190,8 @@
   function googleURL(e, page) {
     var link = page || LINKS_PAGE;
     var name = displayName(e.name), last = isDate(e.endDate) ? e.endDate : e.date, dates;
-    if (isTime(e.start) && isTime(e.end)) dates = compact(e.date) + "T" + e.start.replace(":", "").padStart(4, "0") + "00/" + compact(e.date) + "T" + e.end.replace(":", "").padStart(4, "0") + "00";
+    // A timed link only works for one day; a multi-day stop is offered as the whole span on the calendar.
+    if (isTime(e.start) && isTime(e.end) && last === e.date) dates = compact(e.date) + "T" + e.start.replace(":", "").padStart(4, "0") + "00/" + compact(e.date) + "T" + e.end.replace(":", "").padStart(4, "0") + "00";
     else dates = compact(e.date) + "/" + compact(addDays(last, 1));
     return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent("JAY STEEL JEWELRY at " + name) +
       "&dates=" + dates + "&ctz=" + encodeURIComponent(TZ) + "&location=" + encodeURIComponent(place(e, ", ")) +
@@ -182,7 +202,7 @@
     TZ: TZ, SHOW_STATUSES: SHOW_STATUSES,
     nowET: nowET, isDate: isDate, isTime: isTime, realDate: realDate, realTime: realTime, validateEvents: validateEvents, usableEvents: usableEvents,
     displayName: displayName, cityOf: cityOf, place: place,
-    fmtTime: fmtTime, hours: hours, pickEvents: pickEvents,
+    fmtTime: fmtTime, hours: hours, dateRange: dateRange, shortDate: shortDate, pickEvents: pickEvents,
     icsEsc: icsEsc, addDays: addDays, compact: compact, daysBetween: daysBetween,
     buildICS: buildICS, googleURL: googleURL
   };

@@ -20,10 +20,24 @@
   var DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   var PF = { facebook: "Facebook", instagram: "Instagram", x: "X", tiktok: "TikTok" };
 
-  /* Captions: drop a shop line or a "all our links" line, strip bare URLs and trailing hashtags. */
+  /* A caption is typed by hand on Facebook or Instagram, so it can carry the venue's street address
+     ("175 Fountains Way, St Johns FL"). One bad caption must not undo the rule that no street address
+     ever appears on a page: the house number and street name are cut, the venue and town stay.
+     A number must be followed by a name AND a street suffix, so "Sat Nov 14 · 11 AM–2 PM" and
+     "18K gold plating" are never mistaken for an address. */
+  var STREET = /\b\d{1,6}\s+(?:[A-Za-z0-9.'-]+\s+){1,4}?(?:st|street|ave|avenue|rd|road|blvd|boulevard|ln|lane|dr|drive|ct|court|pl|place|pkw?y|parkway|way|hwy|highway|ter|terrace|cir|circle|trl|trail|loop)\.?(?=[\s,;]|$)/gi;
+  function stripStreet(line) {
+    return String(line || "").replace(STREET, " ")
+      .replace(/\s*,\s*(?=[,.;]|$)/g, "").replace(/\s*,\s*,/g, ",")
+      .replace(/[ \t]{2,}/g, " ").replace(/\s+([,.;])/g, "$1").replace(/[ \t]+$/gm, "");
+  }
+
+  /* Captions: no street address, no shop line or "all our links" line, no bare URLs, no trailing hashtags. */
   function cleanCaption(c) {
     return String(c || "").split(/\r?\n/).filter(function (l) { return !/sq[u]are\.|sq[u]areup/i.test(l) && !/^\s*(shop online|all our links|shop \+ find us)\s*:/i.test(l); })
-      .map(function (l) { return l.replace(/https?:\/\/\S+/g, "").replace(/\s+$/, ""); }).join("\n")
+      .map(function (l) { return stripStreet(l).replace(/https?:\/\/\S+/g, "").replace(/\s+$/, ""); })
+      // A line that was nothing but the address ("📍 175 Fountains Way") is dropped, not left as a pin.
+      .filter(function (l) { return /[a-z0-9]/i.test(l) || !l.trim(); }).join("\n")
       .replace(/(\s*#\w+)+\s*$/, "").replace(/\n{3,}/g, "\n\n").trim();
   }
 
@@ -64,7 +78,7 @@
     if (e.date === today) body.appendChild(el("span", "nm__soon", "Today"));
     body.appendChild(el("h3", "nm__name", core.displayName(e.name)));
     var pl = core.place(e); if (pl) body.appendChild(el("p", "nm__meta", pl));
-    body.appendChild(el("p", "nm__when", DOW[d.getUTCDay()] + ", " + MON[d.getUTCMonth()] + " " + d.getUTCDate() + " · " + core.hours(e)));
+    body.appendChild(el("p", "nm__when", core.dateRange(e) + " · " + core.hours(e)));
     var b = el("button", "hbtn nm__cal"); b.type = "button";
     b.appendChild(svg('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')); b.appendChild(el("span", null, "Add to calendar"));
     b.addEventListener("click", function () {
