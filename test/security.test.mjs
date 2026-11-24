@@ -2,12 +2,12 @@
 // GitHub Pages cannot send headers, so each page's policy ships in its <head> and is checked here.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 const R = path.resolve(new URL("..", import.meta.url).pathname);
 const rd = (f) => readFileSync(path.join(R, f), "utf8");
 // script-src per page: the retired redirect page runs no scripts at all.
-const PAGES = { "index.html": "'self'", "links/index.html": "'self'", "shop/index.html": "'self'", "links-preview/index.html": "'none'" };
+const PAGES = { "index.html": "'self'", "links/index.html": "'self'", "shop/index.html": "'self'", "links-preview/index.html": "'none'", "404.html": "'self'", "circuit/index.html": "'self'" };
 
 function policy(f) {
   const m = rd(f).match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)"/);
@@ -42,8 +42,14 @@ test("no inline scripts or inline event handlers", () => {
   }
 });
 
-test("external links are safe and the inventory workflow stays SHA-pinned", () => {
+test("external links are safe and every workflow stays SHA-pinned", () => {
   for (const f of Object.keys(PAGES)) for (const m of rd(f).matchAll(/<a\b[^>]*target="_blank"[^>]*>/gi)) assert.match(m[0], /rel="noopener noreferrer"/, f);
-  const wf = rd(".github/workflows/shop-sync.yml");
-  for (const m of wf.matchAll(/uses:\s*([^\s#]+)/g)) assert.match(m[1], /@[0-9a-f]{40}$/, m[1]);
+  const dir = path.join(R, ".github/workflows");
+  const files = readdirSync(dir).filter((f) => /\.ya?ml$/.test(f));
+  assert.ok(files.length >= 3, "the workflows are present");
+  // A tag can be moved to new code; a commit SHA cannot. Every action, in every workflow.
+  for (const f of files) {
+    const wf = rd(".github/workflows/" + f);
+    for (const m of wf.matchAll(/uses:\s*([^\s#]+)/g)) assert.match(m[1], /@[0-9a-f]{40}$/, f + ": " + m[1]);
+  }
 });

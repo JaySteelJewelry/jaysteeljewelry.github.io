@@ -1,0 +1,19 @@
+{
+  "name": "jaysteeljewelry",
+  "private": true,
+  "description": "JAY STEEL JEWELRY site: static pages at the repo root, plus a dependency-free Node API for the shop.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/dev.mjs",
+    "dev": "node server/dev.mjs",
+    "test": "node --test test/",
+    "check:events": "node scripts/validate-events.mjs",
+    "sync:events": "node scripts/sync-events.mjs",
+    "seed": "node db/seed.mjs",
+    "seed:print": "node db/seed.mjs --print"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

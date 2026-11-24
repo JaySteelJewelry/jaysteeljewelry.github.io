@@ -1,0 +1,138 @@
+/* THE CIRCUIT — the market app. Deliberately not the site's dark "Chromatic Steel" skin:
+   warm paper, black ink, one hot accent, ticket stubs and oversized numerals. */
+@font-face{font-family:"Montserrat";src:url("/assets/fonts/montserrat.woff2") format("woff2");font-weight:100 900;font-display:swap}
+
+:root{
+  --paper:#F7F1E4;
+  --paper-2:#EFE6D3;
+  --ink:#14120F;
+  --ink-2:#4A443B;
+  --ink-3:#7A7164;
+  --rule:#D8CDB6;
+  --hot:#E2401F;      /* vermilion: the one loud colour */
+  --lime:#D8F24B;     /* highlight, used like a marker pen */
+  --sans:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--hot);outline-offset:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:12px;top:-60px;z-index:50;background:var(--ink);color:var(--paper);padding:10px 14px;text-decoration:none;font-weight:700}
+.skip:focus{top:12px}
+
+/* top bar */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--ink)}
+.bar__brand{display:inline-flex;align-items:center;gap:9px;text-decoration:none;font-weight:900;letter-spacing:.16em;font-size:.75rem;text-transform:uppercase}
+.bar__brand img{width:26px;height:auto;filter:grayscale(1) contrast(1.2)}
+.bar__link{font-family:var(--mono);font-size:.6875rem;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:2px}
+
+/* ticker */
+.ticker{overflow:hidden;background:var(--ink);color:var(--paper);border-bottom:1px solid var(--ink)}
+/* The only continuous animation on the page. will-change keeps it on the compositor so the moving text
+   never forces a repaint of the page underneath it; the pause rule below stops it entirely off screen. */
+.ticker__track{display:inline-flex;white-space:nowrap;animation:slide 38s linear infinite;will-change:transform}
+/* …and it stops completely when it scrolls out of view or the tab is hidden (app.js toggles this). */
+.ticker.is-paused .ticker__track{animation-play-state:paused}
+.ticker__t{display:inline-block;padding:7px 0;font-family:var(--mono);font-size:.6875rem;letter-spacing:.28em;text-transform:uppercase}
+@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* layout */
+main{max-width:36rem;margin:0 auto;padding:0 18px 8px}
+section{margin:34px 0 0}
+/* Below-the-fold sections are skipped entirely while offscreen, so a long season list costs nothing to
+   scroll past. contain-intrinsic-size keeps the scrollbar honest before they are first rendered. */
+.fold{content-visibility:auto;contain-intrinsic-size:auto 460px}
+.h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid var(--ink);font-size:.75rem;font-weight:900;letter-spacing:.2em;text-transform:uppercase}
+.h em{font-family:var(--mono);font-style:normal;font-size:.6875rem;letter-spacing:.08em;color:var(--ink-3)}
+
+/* next stop */
+.next{padding-top:26px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;margin:0;font-family:var(--mono);font-size:.6875rem;letter-spacing:.26em;text-transform:uppercase;color:var(--hot);font-weight:700}
+.eyebrow__dot{width:8px;height:8px;border-radius:50%;background:var(--hot);box-shadow:0 0 0 4px rgba(226,64,31,.16)}
+.next__name{margin:10px 0 0;font-size:clamp(2.1rem,10vw,3.4rem);line-height:.92;font-weight:900;letter-spacing:-.03em;text-transform:uppercase}
+.next__meta{margin:12px 0 0;font-size:1rem;color:var(--ink-2)}
+.next__meta b{color:var(--ink)}
+
+.cd{display:flex;gap:10px;margin:18px 0 0}
+.cd__cell{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px 8px;background:var(--paper-2);border:1px solid var(--ink)}
+.cd__cell b{font-family:var(--mono);font-size:clamp(1.9rem,11vw,2.9rem);line-height:1;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.cd__cell i{font-family:var(--mono);font-style:normal;font-size:.625rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+.cd--live .cd__cell:first-child{background:var(--lime)}
+
+/* buttons */
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:46px;padding:0 16px;border:1px solid var(--ink);background:var(--paper);color:var(--ink);font:inherit;font-size:.8125rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:background .15s,color .15s,transform .1s}
+.btn:hover{background:var(--ink);color:var(--paper)}
+.btn:active{transform:translateY(1px)}
+.btn,.mine__x,select,a{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn--ink{background:var(--ink);color:var(--paper);width:100%}
+.btn--ink:hover{background:var(--hot);border-color:var(--hot)}
+.btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.btn[aria-pressed="true"]{background:var(--lime);border-color:var(--ink);color:var(--ink)}
+.btn[aria-pressed="true"]:hover{background:var(--ink);color:var(--lime)}
+
+/* season: ticket stubs */
+.season{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.stub{position:relative;display:grid;grid-template-columns:76px 1fr;gap:0 14px;background:var(--paper-2);border:1px solid var(--ink);padding:0}
+.stub::before,.stub::after{content:"";position:absolute;left:76px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:1px solid var(--ink)}
+.stub::before{top:-7px}
+.stub::after{bottom:-7px}
+.stub__date{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:14px 4px;border-right:1px dashed var(--ink);text-transform:uppercase}
+.stub__dow{font-family:var(--mono);font-size:.625rem;letter-spacing:.16em;color:var(--ink-3)}
+.stub__day{font-size:1.9rem;font-weight:900;line-height:1;letter-spacing:-.03em}
+.stub__mon{font-family:var(--mono);font-size:.625rem;letter-spacing:.16em}
+.stub__body{padding:13px 14px 14px 0;min-width:0}
+.stub__name{margin:0;font-size:1.05rem;font-weight:900;line-height:1.1;letter-spacing:-.01em;text-transform:uppercase}
+.stub__meta{margin:5px 0 0;font-size:.8125rem;color:var(--ink-2)}
+.stub__row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.stub .btn{min-height:40px;padding:0 11px;font-size:.6875rem}
+.stub__flag{position:absolute;top:-1px;right:-1px;background:var(--hot);color:var(--paper);font-family:var(--mono);font-size:.5625rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 7px}
+.stub--next{background:var(--paper)}
+.stub--next .stub__date{background:var(--lime)}
+
+/* my season */
+.mine{display:flex;flex-direction:column;gap:8px}
+.mine__row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border:1px solid var(--rule);background:var(--paper-2)}
+.mine__t{font-weight:800;font-size:.9rem;line-height:1.2}
+.mine__s{font-family:var(--mono);font-size:.6875rem;color:var(--ink-3);letter-spacing:.06em}
+.mine__x{border:0;background:none;font:inherit;font-size:1.1rem;line-height:1;cursor:pointer;color:var(--ink-3);padding:8px}
+.mine__x:hover{color:var(--hot)}
+
+/* bring it with you */
+.bring{border-top:2px solid var(--ink);padding-top:20px}
+.bring__lede{margin:0 0 14px;color:var(--ink-2);font-size:.9375rem}
+.bring__form{display:grid;gap:12px}
+.field{display:grid;gap:5px;min-width:0}
+.field>span{font-family:var(--mono);font-size:.6875rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.field select{width:100%;max-width:100%;min-width:0;min-height:46px;text-overflow:ellipsis;padding:10px 12px;font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:1px solid var(--ink);border-radius:0;appearance:none;-webkit-appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);
+  background-position:calc(100% - 19px) 52%,calc(100% - 13px) 52%;background-size:6px 6px;background-repeat:no-repeat}
+.bring__note{margin:0;font-family:var(--mono);font-size:.6875rem;color:var(--ink-3);letter-spacing:.06em}
+
+/* empty / loading states */
+.state{margin:0;padding:16px;border:1px dashed var(--rule);background:var(--paper-2);color:var(--ink-2);font-size:.9rem}
+.state a{color:var(--hot);font-weight:800}
+
+/* footer */
+.foot{margin-top:36px;padding:18px;border-top:1px solid var(--ink);background:var(--ink);color:var(--paper);font-size:.75rem}
+.foot p{margin:0 0 6px}
+.foot__sync{font-family:var(--mono);font-size:.625rem;letter-spacing:.14em;text-transform:uppercase;color:#B9AF9C}
+.foot__links a{color:var(--paper);text-decoration:underline;text-underline-offset:3px}
+.foot__links a:hover{color:var(--lime)}
+
+@media (min-width:640px){
+  main{padding:0 24px 8px}
+  .next__name{font-size:3.2rem}
+  .bring__form{grid-template-columns:1fr 1fr;align-items:end}
+  .bring__form .btn{grid-column:1/-1}
+}
+@media (prefers-reduced-motion:reduce){
+  .ticker__track{animation:none}
+  *{transition:none!important}
+}

@@ -1,0 +1,7 @@
+# Keep source-only folders out of the deployment entirely. /server must stay: the functions import it.
+artifacts/
+test/
+db/
+netlify/
+scripts/
+.github/

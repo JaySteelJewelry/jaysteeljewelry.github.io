@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The Circuit · JAY STEEL JEWELRY</title>
+  <meta name="description" content="The JAY STEEL market season: the next stop, every confirmed date, directions and a countdown. Add it to your home screen and it works offline.">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#F7F1E4">
+  <!-- Same discipline as the rest of the site: no inline script, no third-party code. connect-src covers
+       exactly the two places the market list can come from. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com https://jaysteeljewelry.github.io; manifest-src 'self'; worker-src 'self'">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="/assets/icon-192.png">
+  <link rel="preload" href="/assets/fonts/montserrat.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="circuit.css?v=4">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="bar">
+    <a class="bar__brand" href="/" aria-label="JAY STEEL JEWELRY home">
+      <img src="/assets/mark-steel-96.png" alt="" width="96" height="92">
+      <span>JAY STEEL</span>
+    </a>
+    <a class="bar__link" href="/links/">All links</a>
+  </header>
+
+  <div class="ticker" aria-hidden="true"><div class="ticker__track"><span class="ticker__t">THE CIRCUIT · FIND US IN PERSON · </span><span class="ticker__t">THE CIRCUIT · FIND US IN PERSON · </span></div></div>
+
+  <main id="main">
+    <section class="next" aria-labelledby="next-h">
+      <p class="eyebrow"><span class="eyebrow__dot"></span> Next stop</p>
+      <h1 class="next__name" id="next-h">Reading the season…</h1>
+      <p class="next__meta" id="next-meta"></p>
+
+      <div class="cd" id="cd" aria-hidden="true">
+        <span class="cd__cell"><b id="cd-d">—</b><i>days</i></span>
+        <span class="cd__cell"><b id="cd-h">—</b><i>hrs</i></span>
+        <span class="cd__cell"><b id="cd-m">—</b><i>min</i></span>
+      </div>
+      <p class="sr" id="cd-sr" role="status"></p>
+
+      <div class="acts" id="acts"></div>
+    </section>
+
+    <section class="fold" aria-labelledby="season-h">
+      <h2 class="h" id="season-h"><span>The season</span><em id="season-count"></em></h2>
+      <ol class="season" id="season"></ol>
+      <p class="state" id="season-state" hidden></p>
+    </section>
+
+    <section class="fold" aria-labelledby="mine-h">
+      <h2 class="h" id="mine-h"><span>My season</span></h2>
+      <div class="mine" id="mine">
+        <p class="state">Nothing saved yet. Tap ☆ on a stop to keep it here — it stays on your phone, even offline.</p>
+      </div>
+    </section>
+
+    <section class="bring fold" aria-labelledby="bring-h">
+      <h2 class="h" id="bring-h"><span>Bring it with you</span></h2>
+      <p class="bring__lede">Pick a piece and a stop. We'll get an email asking us to pack it — no account, nothing stored.</p>
+      <form class="bring__form" id="bring-form">
+        <label class="field"><span>Piece</span><select id="bring-piece" required></select></label>
+        <label class="field"><span>Stop</span><select id="bring-stop" required></select></label>
+        <button class="btn btn--ink" type="submit">Ask by email</button>
+        <p class="bring__note" id="bring-note" hidden>Opening your email app with the request ready to send.</p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>© 2026 JAY STEEL JEWELRY · Jacksonville, FL</p>
+    <p class="foot__sync" id="sync">Syncing the season…</p>
+    <p class="foot__links"><a href="/">Home</a> · <a href="/links/">Links &amp; socials</a> · <a href="mailto:jaysteeljewelry@gmail.com">Email us</a></p>
+  </footer>
+
+  <script src="/assets/events-core.js?v=4" defer></script>
+  <script src="app.js?v=7" defer></script>
+</body>
+</html>

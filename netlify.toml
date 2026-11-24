@@ -1,0 +1,83 @@
+# JAY STEEL JEWELRY — deploy config for the free Netlify tier (commercial use allowed, unlike Vercel's Hobby).
+#
+# Why this host: GitHub Pages can serve files but cannot send headers or run code. Netlify serves the same
+# static site from this repo *and* gives it real HTTP security headers (the CSP currently ships as a <meta>
+# tag because Pages has nowhere to put a header) plus the serverless functions in /netlify/functions that
+# the shop needs to price an order safely.
+#
+# Connect: Netlify dashboard -> Add new site -> Import an existing project -> GitHub -> this repo.
+# Build command: none. Publish directory: . (the site is plain HTML at the repo root, no build step.)
+
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Security headers for every response. These duplicate and strengthen the per-page <meta> CSP, which stays
+# in place so the same files remain safe when served by GitHub Pages.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://raw.githubusercontent.com https://jaysteeljewelry.github.io; manifest-src 'self'; worker-src 'self'"
+
+[[headers]]
+  for = "/assets/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/latest/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex"
+
+# The repo root is published as-is, so keep source and tooling out of the public surface.
+[[redirects]]
+  from = "/server/*"
+  to = "/404.html"
+  status = 404
+[[redirects]]
+  from = "/netlify/*"
+  to = "/404.html"
+  status = 404
+[[redirects]]
+  from = "/test/*"
+  to = "/404.html"
+  status = 404
+[[redirects]]
+  from = "/db/*"
+  to = "/404.html"
+  status = 404
+[[redirects]]
+  from = "/scripts/*"
+  to = "/404.html"
+  status = 404
+[[redirects]]
+  from = "/.github/*"
+  to = "/404.html"
+  status = 404
+[[redirects]]
+  from = "/package.json"
+  to = "/404.html"
+  status = 404
+[[redirects]]
+  from = "/netlify.toml"
+  to = "/404.html"
+  status = 404
+[[redirects]]
+  from = "/README.md"
+  to = "/404.html"
+  status = 404

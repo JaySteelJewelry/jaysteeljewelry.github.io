@@ -1,0 +1,35 @@
+name: Season feed sync
+# Daily: pull the season feed from the logistics repo, validate it, project it to the public fields the
+# pages render, and commit only when the result is clean. A bad upstream entry commits nothing.
+# Without this the vendored copy ages out and the calendar reads "New dates are coming soon".
+on:
+  schedule:
+    - cron: "17 12 * * *" # 07:17/08:17 Eastern
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: feed-sync
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "20"
+      - name: Sync, validate and project
+        run: npm run sync:events
+      - name: Check the file that will ship
+        run: npm run check:events
+      - name: Commit if the season changed
+        run: |
+          git add data/events.json
+          if git diff --cached --quiet; then echo "Feed unchanged."; exit 0; fi
+          git config user.name "jaysteel-feed-sync"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Feed: sync season from market logistics"
+          for i in 1 2 3; do git pull --rebase --quiet && git push && exit 0; sleep 5; done
+          exit 1
