@@ -22,5 +22,7 @@ jobs:
           node-version: "20"
       - name: Tests (site, links, shop API, circuit, feed rules)
         run: node --test test/
+      - name: Every ?v= matches its asset
+        run: npm run check:assets
       - name: Season feed is valid
         run: npm run check:events

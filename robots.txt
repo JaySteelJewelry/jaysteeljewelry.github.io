@@ -1,3 +1,5 @@
 User-agent: *
 Allow: /
 Disallow: /jaysteel-hq/
+
+Sitemap: https://jaysteeljewelry.github.io/sitemap.xml

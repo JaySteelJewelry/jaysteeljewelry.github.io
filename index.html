@@ -8,13 +8,14 @@
 	<meta name="theme-color" content="#0E0F11">
 	<!-- GitHub Pages cannot send headers, so the policy lives here. style-src needs 'unsafe-inline' only because /ptr.js injects its own small stylesheet. -->
 	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://raw.githubusercontent.com https://jaysteeljewelry.github.io; form-action 'none'">
-	<script src="/assets/theme-init.js?v=1"></script>
+	<script src="/assets/theme-init.js?v=2c1f0848"></script>
 	<link rel="icon" href="/favicon.ico" sizes="any">
 	<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 	<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 	<link rel="manifest" href="/manifest.webmanifest">
 	<link rel="preload" href="/assets/fonts/montserrat.woff2" as="font" type="font/woff2" crossorigin>
-	<link rel="stylesheet" href="/assets/steel.css?v=4">
+	<link rel="stylesheet" href="/assets/steel.css?v=810287c3">
+	<link rel="alternate" type="text/calendar" title="JAY STEEL JEWELRY — the season" href="/season.ics">
 	<title>JAY STEEL JEWELRY</title>
 	<meta name="description" content="JAY STEEL JEWELRY (@JaySteelJewelry): hypoallergenic, non-tarnish jewelry in 18K gold plating over 316L stainless steel, gold-filled and 925 sterling silver. See our next market and latest post.">
 	<link rel="canonical" href="https://jaysteeljewelry.github.io/">
@@ -31,7 +32,7 @@
 	<meta name="twitter:title" content="JAY STEEL JEWELRY">
 	<meta name="twitter:description" content="Hypoallergenic, non-tarnish jewelry in 18K gold plating over 316L stainless steel, gold-filled and 925 sterling silver.">
 	<meta name="twitter:image" content="https://jaysteeljewelry.github.io/assets/og-steel.jpg">
-	<link rel="stylesheet" href="/assets/home-steel.css?v=3">
+	<link rel="stylesheet" href="/assets/home-steel.css?v=ca88afd8">
 </head>
 
 <body>
@@ -94,10 +95,18 @@
 
 		<section class="blk" id="market" aria-labelledby="market-h">
 			<h2 id="market-h" class="blk__h">Next market</h2>
-			<div class="card nm" id="nm" aria-live="polite" aria-busy="true">
-				<p class="nm__state">Loading the next date…</p>
-			</div>
-		</section>
+							<div class="card nm" id="nm" aria-live="polite" aria-busy="true">
+					<p class="nm__state">Loading the next date…</p>
+				</div>
+				<div class="cal-sub">
+					<p class="cal-sub__lede">Every confirmed date in your own calendar, updated as dates are added.</p>
+					<ul class="cal-sub__row" role="list">
+						<li><a class="cal-sub__b" href="webcal://jaysteeljewelry.github.io/season.ics">Apple Calendar</a></li>
+						<li><a class="cal-sub__b" href="https://calendar.google.com/calendar/render?cid=webcal%3A%2F%2Fjaysteeljewelry.github.io%2Fseason.ics" target="_blank" rel="noopener noreferrer">Google Calendar</a></li>
+						<li><a class="cal-sub__b" href="/season.ics" type="text/calendar" download="jay-steel-season.ics">Download .ics</a></li>
+					</ul>
+				</div>
+			</section>
 
 		<section class="blk" id="latest" aria-labelledby="latest-h">
 			<h2 id="latest-h" class="blk__h">Latest post</h2>
@@ -107,6 +116,20 @@
 			<noscript>
 				<p class="lp__state"><a href="https://www.instagram.com/jaysteeljewelry/">Follow @JaySteelJewelry on Instagram</a></p>
 			</noscript>
+		</section>
+
+		<section class="blk" id="list" aria-labelledby="list-h">
+			<h2 id="list-h" class="blk__h">Market dates by email</h2>
+			<div class="card su">
+				<p class="su__lede">A short note when new dates are confirmed. No spam, and you can leave the list any time.</p>
+				<form class="su__form" id="sform" novalidate>
+					<label class="su__sr" for="sf-email">Email address</label>
+					<input id="sf-email" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="254" placeholder="you@example.com">
+					<button class="hbtn hbtn--solid" type="submit">Join the list</button>
+				</form>
+				<p class="su__note" id="sf-note" role="status" aria-live="polite">We keep your address only to send market dates. It is never sold or shared.</p>
+				<noscript><p class="su__note">Add yourself by emailing <a href="mailto:jaysteeljewelry@gmail.com?subject=Add%20me%20to%20the%20market%20list">jaysteeljewelry@gmail.com</a>.</p></noscript>
+			</div>
 		</section>
 
 		<section class="blk" id="contact" aria-labelledby="contact-h">
@@ -143,12 +166,13 @@
 			<p>© <span id="yr">2026</span> JAY STEEL JEWELRY</p>
 		</footer>
 	</main>
-	<script src="/assets/events-core.js?v=8" defer></script>
-	<script src="/assets/home.js?v=5" defer></script>
-	<script src="/contact.js?v=2" defer></script>
-	<script src="/assets/steel-nav.js?v=3" defer></script>
+	<script src="/assets/events-core.js?v=4356ba68" defer></script>
+	<script src="/assets/home.js?v=be0c0b1c" defer></script>
+	<script src="/contact.js?v=7876f89f" defer></script>
+	<script src="/assets/subscribe.js?v=a879586d" defer></script>
+	<script src="/assets/steel-nav.js?v=967010d3" defer></script>
 	<!-- pull-to-refresh + auto-update (ptr.js is standalone; keep this one line on any rewrite) -->
-	<script src="/ptr.js?v=1" defer></script>
+	<script src="/ptr.js?v=45d874aa" defer></script>
 </body>
 
 </html>

@@ -120,3 +120,26 @@ html[data-theme="light"] .lp__img{background:#E7DFF8}
 html[data-theme="light"] .cfield input,html[data-theme="light"] .cfield select,html[data-theme="light"] .cfield textarea{background:#FBF9FF}
 html[data-theme="light"] .cerr{color:#A8175A}
 html[data-theme="light"] .cfield [aria-invalid="true"]{border-color:#C81E6E}
+
+/* season subscription: the same three choices /links/ offers, beside the next date */
+.cal-sub{margin-top:12px}
+.cal-sub__lede{margin:0 0 8px;font-size:.8125rem;color:var(--st-muted)}
+.cal-sub__row{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.cal-sub__row li{flex:1 1 8rem;display:flex}
+.cal-sub__b{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;padding:0 10px;border-radius:12px;border:1px solid var(--st-line);background:var(--st-raised);color:var(--st-text);font-size:.8125rem;font-weight:700;text-decoration:none;text-align:center;transition:border-color .15s,background .15s}
+.cal-sub__b:hover{border-color:var(--st-accent);color:var(--st-text)}
+
+/* email signup */
+.su__lede{margin:0 0 10px;font-size:.875rem;color:var(--st-muted)}
+.su__form{display:flex;flex-wrap:wrap;gap:8px}
+.su__form input{flex:1 1 12rem;min-width:0;font:inherit;font-size:16px;color:var(--st-text);background:rgba(9,6,20,.5);border:1px solid var(--st-line);border-radius:12px;padding:12px 13px;appearance:none;-webkit-appearance:none;transition:border-color .15s,box-shadow .15s}
+.su__form input:focus{outline:none;border-color:var(--st-accent);box-shadow:var(--st-ring)}
+.su__form input[aria-invalid="true"]{border-color:#E879A6}
+.su__form .hbtn{flex:0 0 auto}
+.su__note{margin:10px 0 0;font-size:.8125rem;color:var(--st-muted)}
+.su__note--bad{color:#F3A7C4}
+.su__note a{color:var(--st-accent);font-weight:700}
+.su__sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+html[data-theme="light"] .su__form input{background:#FBF9FF}
+html[data-theme="light"] .su__form input[aria-invalid="true"]{border-color:#C81E6E}
+html[data-theme="light"] .su__note--bad{color:#A81B5A}

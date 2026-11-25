@@ -39,6 +39,14 @@ create table if not exists order_items (
 create index if not exists orders_status_created_idx on orders (status, created_at desc);
 create index if not exists order_items_sku_idx on order_items (sku);
 
+-- The market-date list behind the home page signup. One row per address, stored lowercased, with the
+-- page it came from. Nothing is mailed automatically; this is consent to be contacted, nothing more.
+create table if not exists subscribers (
+  email      text        primary key check (email like '%_@_%._%'),
+  source     text        not null default 'home',
+  created_at timestamptz not null default now()
+);
+
 -- The server reads products through this view so a rename of a column happens in one place.
 create or replace view public_products as
   select sku, name, price_cents, currency, stock, image, description, sort_order

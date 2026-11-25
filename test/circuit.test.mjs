@@ -92,9 +92,12 @@ test("the service worker pre-caches the shell and keeps market data network-firs
   assert.match(sw, /clients\.claim/);
   assert.match(sw, /fetch\(req\)\.then/, "data is network-first");
   assert.match(sw, /caches\.match\(req\)/, "with a cached fallback");
-  for (const asset of ["circuit.css?v=4", "app.js?v=8", "/assets/events-core.js?v=8", "/assets/fonts/montserrat.woff2"]) {
+  // Versions are content hashes (scripts/asset-versions.mjs), so the shell names each file and a hash.
+  for (const asset of ["circuit.css?v=", "app.js?v=", "/assets/events-core.js?v=", "/assets/fonts/montserrat.woff2"]) {
     assert.ok(sw.includes(asset), "shell missing " + asset);
   }
+  for (const m of sw.matchAll(/"[^"]+\?v=([A-Za-z0-9]+)"/g)) assert.match(m[1], /^[0-9a-f]{8}$/, "unhashed version " + m[0]);
+  assert.match(sw, /const VERSION = "jsj-circuit-[0-9a-f]{8}";/, "the cache name follows its shell");
 });
 
 test("the app is reachable from the site menu without turning into a second site map", () => {

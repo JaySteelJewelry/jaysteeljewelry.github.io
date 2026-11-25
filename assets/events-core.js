@@ -255,6 +255,54 @@
     return L.map(foldLine).join("\r\n") + "\r\n";
   }
 
+  /* ---------- Schema.org ----------
+     The Event markup a search crawler reads is built from the same record the page renders, so it cannot
+     advertise a stop the page hides, and it never carries a street address the site never shows. */
+  function etOffset(day) {
+    try {
+      var parts = new Intl.DateTimeFormat("en-US", { timeZone: TZ, timeZoneName: "longOffset" }).formatToParts(new Date(day + "T12:00:00Z"));
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].type === "timeZoneName") {
+          var m = /GMT([+-]\d{2}:\d{2})/.exec(parts[i].value);
+          if (m) return m[1];
+        }
+      }
+    } catch (e) { /* older engine: fall through to standard time */ }
+    return "-05:00";
+  }
+  function postal(e) {
+    var parts = cityOf(e).split(","), o = { "@type": "PostalAddress", addressCountry: "US" };
+    if (parts[0] && parts[0].trim()) o.addressLocality = parts[0].trim();
+    o.addressRegion = (parts[1] || "FL").trim();
+    return o;
+  }
+  /** One schema.org Event for one public stop. `base` is the site root the organizer/image URLs use. */
+  function eventSchema(e, base) {
+    var site = base || "https://jaysteeljewelry.github.io/";
+    var name = displayName(e.name), last = isDate(e.endDate) ? e.endDate : e.date;
+    var timed = isTime(e.start) && isTime(e.end);
+    var venue = String(e.venue || "").replace(/\s*\(.*?\)\s*/g, " ").replace(/\s+/g, " ").trim();
+    return {
+      "@context": "https://schema.org",
+      "@type": "Event",
+      name: "JAY STEEL JEWELRY at " + name,
+      startDate: timed ? e.date + "T" + e.start.padStart(5, "0") + etOffset(e.date) : e.date,
+      endDate: timed ? last + "T" + e.end.padStart(5, "0") + etOffset(last) : last,
+      eventStatus: "https://schema.org/EventScheduled",
+      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+      description: "Come find JAY STEEL JEWELRY at " + name + ": hypoallergenic, non-tarnish jewelry. All our links: " + LINKS_PAGE,
+      url: LINKS_PAGE,
+      image: [site + "assets/og-steel.jpg"],
+      isAccessibleForFree: true,
+      location: {
+        "@type": "Place",
+        name: venue || cityOf(e) || "JAY STEEL JEWELRY",
+        address: postal(e),
+      },
+      organizer: { "@type": "Organization", name: "JAY STEEL JEWELRY", url: site },
+    };
+  }
+
   function googleURL(e, page) {
     var link = page || LINKS_PAGE;
     var name = displayName(e.name), last = isDate(e.endDate) ? e.endDate : e.date, dates;
@@ -272,6 +320,7 @@
     displayName: displayName, cityOf: cityOf, place: place,
     fmtTime: fmtTime, hours: hours, dateRange: dateRange, shortDate: shortDate, pickEvents: pickEvents,
     icsEsc: icsEsc, foldLine: foldLine, addDays: addDays, compact: compact, daysBetween: daysBetween,
-    buildICS: buildICS, buildSeasonICS: buildSeasonICS, googleURL: googleURL, LINKS_PAGE: LINKS_PAGE
+    buildICS: buildICS, buildSeasonICS: buildSeasonICS, googleURL: googleURL, LINKS_PAGE: LINKS_PAGE,
+    etOffset: etOffset, eventSchema: eventSchema
   };
 });

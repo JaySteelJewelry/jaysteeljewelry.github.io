@@ -59,6 +59,13 @@
 
   function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
   function svg(path) { var s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("aria-hidden", "true"); s.innerHTML = path; return s; }
+  /* Search engines read the stop from this data block. It is built from the same event the card shows,
+     so it cannot advertise a stop, a venue or an address the page withholds. */
+  function addSchema(e) {
+    var old = document.getElementById("jsj-event"); if (old) old.parentNode.removeChild(old);
+    var s = document.createElement("script"); s.type = "application/ld+json"; s.id = "jsj-event";
+    s.textContent = JSON.stringify(core.eventSchema(e)); document.head.appendChild(s);
+  }
   function getJSON(urls, i) {
     i = i || 0; if (i >= urls.length) return Promise.reject(new Error("unavailable"));
     var u = urls[i] + (urls[i].indexOf("?") === -1 ? "?" : "&") + "t=" + Date.now();
@@ -88,6 +95,7 @@
     });
     body.appendChild(b);
     box.appendChild(date); box.appendChild(body);
+    addSchema(e);
   }
 
   function renderFollow(box) {

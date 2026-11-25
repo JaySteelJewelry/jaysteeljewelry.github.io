@@ -13,6 +13,7 @@ import { extname, join, normalize, resolve } from "node:path";
 import { handleProducts } from "./api/products.mjs";
 import { handleOrders } from "./api/orders.mjs";
 import { handleCapture } from "./api/capture.mjs";
+import { handleSubscribe } from "./api/subscribe.mjs";
 
 const ROOT = resolve(new URL("..", import.meta.url).pathname);
 const PORT = Number(process.env.PORT || 8787);
@@ -39,6 +40,7 @@ const ROUTES = {
   "/api/products": handleProducts,
   "/api/orders": handleOrders,
   "/api/capture": handleCapture,
+  "/api/subscribe": handleSubscribe,
 };
 
 /** Turn a node:http request into a Request, run the handler, write the Response back. */

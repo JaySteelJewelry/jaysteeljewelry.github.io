@@ -107,7 +107,7 @@ async function check() {
 
   // Every versioned asset the home page asks for must exist: a stale ?v= after a bump is a 404 for the site.
   const home = pages["/"].body || "";
-  const assets = [...new Set([...home.matchAll(/(?:src|href)="([^"]+\?v=\d+)"/g)].map((m) => m[1]))];
+  const assets = [...new Set([...home.matchAll(/(?:src|href)="([^"]+\?v=[0-9a-f]{8})"/g)].map((m) => m[1]))];
   if (!assets.length) bad.push("the live home page references no versioned assets");
   for (const asset of assets) {
     const r = await get(asset);
@@ -116,9 +116,9 @@ async function check() {
 
   // The origin must be serving this commit, not an older one: Pages can report success and still be behind.
   const local = await readFile(new URL("../index.html", import.meta.url), "utf8");
-  const want = (local.match(/\/assets\/events-core\.js\?v=(\d+)/) || [])[1];
+  const want = (local.match(/\/assets\/events-core\.js\?v=([0-9a-f]{8})/) || [])[1];
   if (!want) bad.push("this repo's index.html has no events-core version to compare");
-  else if (!new RegExp("/assets/events-core\\.js\\?v=" + want + '"').test(home)) bad.push(`live home page is behind (repo wants events-core v=${want})`);
+  else if (!home.includes("/assets/events-core.js?v=" + want + '"')) bad.push(`live home page is behind (repo wants events-core v=${want})`);
 
   // A missing path must be a 404 (404.html ships); a 5xx means a broken or unfinished deploy.
   const missing = await get("/this-path-should-not-exist-" + Date.now());

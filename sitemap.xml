@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The pages a search engine should index. /shop/ is a noindex coming-soon page and /jaysteel-hq/
+     is disallowed in robots.txt, so neither is listed here. test/asset-versions.test.mjs checks every
+     <loc> against the files in this repo. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://jaysteeljewelry.github.io/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://jaysteeljewelry.github.io/links/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://jaysteeljewelry.github.io/circuit/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+</urlset>

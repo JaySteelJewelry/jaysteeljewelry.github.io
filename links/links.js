@@ -29,6 +29,14 @@
   }
   var CAL_ICON = "M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM12 12v5M9.5 14.5h5";
 
+  /* The stop this page shows, in the language a search crawler reads. Built from the same event the card
+     renders, so the markup can never contradict the page or leak a street address. */
+  function addSchema(e) {
+    var old = document.getElementById("jsj-event"); if (old) old.parentNode.removeChild(old);
+    var s = document.createElement("script"); s.type = "application/ld+json"; s.id = "jsj-event";
+    s.textContent = JSON.stringify(core.eventSchema(e, "https://jaysteeljewelry.github.io/")); document.head.appendChild(s);
+  }
+
   function card(e) {
     var li = el("li", "ev ev--next");
     var d = new Date(e.date + "T12:00:00Z");
@@ -67,6 +75,7 @@
     box.appendChild(el("h3", "month", MONTHS[d.getUTCMonth()] + " " + d.getUTCFullYear()));
     var ul = el("ul", "events"); ul.setAttribute("role", "list");
     ul.appendChild(card(e)); box.appendChild(ul);
+    addSchema(e);
     var note = el("p", "cal__note"); note.appendChild(document.createTextNode("Times are Eastern. Plans can change: "));
     var ig = el("a", null, "Instagram"); ig.href = "https://www.instagram.com/jaysteeljewelry/"; ig.target = "_blank"; ig.rel = "noopener noreferrer";
     note.appendChild(ig); note.appendChild(document.createTextNode(" always has the latest."));

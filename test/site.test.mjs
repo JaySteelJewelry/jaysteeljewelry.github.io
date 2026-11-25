@@ -11,7 +11,8 @@ test('home shell: title, viewport, landmarks, local assets exist', () => {
   assert.match(html, /name="viewport" content="width=device-width, initial-scale=1/);
   assert.match(html, /<main id="main"/); assert.match(html, /<header class="sbar">/); assert.match(html, /<footer/);
   for (const m of html.matchAll(/(?:src|href|srcset)="(\/[^"?#]+)/g)) if (!/^\/jaysteel-market-logistics-app\/$/.test(m[1]) && m[1] !== '/links/') assert.ok(existsSync(R + m[1].slice(1)), 'missing ' + m[1]);
-  assert.doesNotMatch(html, /TODO|lorem|PLACEHOLDER/i);
+  // A field's own placeholder attribute is a hint, not unfinished copy; everything a reader sees is checked.
+  assert.doesNotMatch(html.replace(/\bplaceholder="[^"]*"/g, ""), /TODO|lorem|PLACEHOLDER/i);
 });
 
 test('home content: brand, handle, product line, sections, no tagline, no shop', () => {
@@ -71,6 +72,49 @@ test('latest post: caption never shows a store link; data file shape', () => {
   }
 });
 
+test('the season is subscribable from the home page too, not only /links/', () => {
+  // The date card is where a visitor commits to going; the subscription belongs beside it.
+  assert.match(html, /<link rel="alternate" type="text\/calendar"[^>]*href="\/season\.ics"/);
+  assert.match(html, /class="cal-sub__b" href="webcal:\/\/jaysteeljewelry\.github\.io\/season\.ics"/);
+  assert.match(html, /href="https:\/\/calendar\.google\.com\/calendar\/render\?cid=webcal%3A%2F%2Fjaysteeljewelry\.github\.io%2Fseason\.ics" target="_blank" rel="noopener noreferrer"/);
+  assert.match(html, /href="\/season\.ics"[^>]*download="jay-steel-season\.ics"/);
+  assert.match(css, /\.cal-sub__row/);
+  // Static markup: no script builds these three links.
+  assert.doesNotMatch(js, /webcal:/);
+});
+
+test('email signup: one field, same-origin endpoint, mail fallback when the host runs no code', () => {
+  assert.match(html, /<form class="su__form" id="sform" novalidate>/);
+  assert.match(html, /<input id="sf-email" name="email" type="email"/);
+  assert.match(html, /<label class="su__sr" for="sf-email">Email address<\/label>/);
+  assert.match(html, /<button class="hbtn hbtn--solid" type="submit">Join the list<\/button>/);
+  const sub = rd('assets/subscribe.js');
+  assert.match(sub, /fetch\("\/api\/subscribe"/, 'same-origin only: no third-party form');
+  assert.match(sub, /mailto:/, 'a host with no API still gets the address to the shop');
+  assert.doesNotMatch(sub, /innerHTML|eval\(/);
+  // The promise on the card and the code agree: the address is not published or shared.
+  assert.match(html, /never sold or shared/);
+});
+
+test('the next market is also described in schema.org, built from the same event', () => {
+  assert.match(js, /core\.eventSchema\(e\)/);
+  assert.match(js, /application\/ld\+json/);
+  const core = createRequire(import.meta.url)(R + 'assets/events-core.js');
+  const e = { id: 'r', name: 'Riverside Fall Market (Jacksonville Business Connections)', status: 'booked', paid: true,
+    date: '2026-12-13', start: '11:00', end: '15:00', venue: 'Riverwalk Artist Square (under the bridge), Riverside',
+    address: '725 Riverside Ave, Jacksonville, FL 32204' };
+  const s = core.eventSchema(e);
+  assert.equal(s['@type'], 'Event');
+  assert.equal(s.name, 'JAY STEEL JEWELRY at Riverside Fall Market');
+  assert.equal(s.startDate, '2026-12-13T11:00-05:00', 'Eastern standard time in December');
+  assert.equal(s.endDate, '2026-12-13T15:00-05:00');
+  assert.equal(s.location.address.addressLocality, 'Jacksonville');
+  assert.equal(s.location.address.addressRegion, 'FL');
+  assert.equal(s.location.address.streetAddress, undefined, 'never a street address');
+  assert.doesNotMatch(JSON.stringify(s), /725|Riverside Ave|32204/);
+  assert.equal(core.etOffset('2026-07-04'), '-04:00', 'daylight saving is in the offset');
+});
+
 test('theme setting: dark default, light, match phone; applied before paint; ptr include kept', () => {
   const init = rd('assets/theme-init.js'), nav = rd('assets/steel-nav.js'), sc = rd('assets/steel.css');
   for (const f of ['index.html', 'links/index.html', 'shop/index.html']) {
@@ -78,7 +122,7 @@ test('theme setting: dark default, light, match phone; applied before paint; ptr
     assert.ok(i > 0 && i < h.indexOf('</head>'), f + ' theme-init in head');
     assert.ok(!/theme-init\.js[^>]*(defer|async)/.test(h), f + ' theme-init must block');
   }
-  for (const f of ['index.html', 'links/index.html']) assert.match(rd(f), /<script src="\/ptr\.js\?v=1" defer><\/script>/);
+  for (const f of ['index.html', 'links/index.html']) assert.match(rd(f), /<script src="\/ptr\.js\?v=[0-9a-f]{8}" defer><\/script>/);
   assert.match(init, /"dark"/); assert.match(init, /prefers-color-scheme: light/);
   for (const w of ['"Dark"', '"Light"', '"Match phone"', 'jsj-theme']) assert.ok(nav.includes(w), w);
   assert.match(sc, /html\[data-theme="light"\]\{/);

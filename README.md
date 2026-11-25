@@ -4,16 +4,19 @@ Jacksonville, FL. Live: https://jaysteeljewelry.github.io — one home: Next mar
 
 ## The pages
 
-- `index.html`, `assets/home-steel.css` — home. "Chromatic Steel" look (Nov 23 2026): indigo-plum ground, violet→fuchsia accents, jewel-coloured menu icons, dark + light themes.
+- `index.html`, `assets/home-steel.css` — home. "Chromatic Steel" look (Nov 23 2026): indigo-plum ground, violet→fuchsia accents, jewel-coloured menu icons, dark + light themes. The next-date card is followed by the season subscription (Apple / Google / download) and by the email signup, so a visitor who cannot come this week can still keep the dates.
 - `links/index.html`, `links/links.css`, `links/links.js`, `links/share.js` — link-in-bio: socials, "Find us at" calendar, a subscribe row (Apple Calendar / Google Calendar / download `.ics`) under it, share row.
 - `shop/index.html` — coming-soon page. The bag and browser-priced PayPal checkout were deleted (see Security).
 - `assets/steel.css` — the shared layer: palette, top bar, ☰ menu, theme control. Every page aliases these tokens; a colour changes in one place.
-- `assets/events-core.js` — **the** market rules (approval gate, never Hyatt Place, never Park Street, venue + city only, never a street address). Shared by the home page and `/links/`; before it, each page had its own copy and the two had drifted.
+- `assets/events-core.js` — **the** market rules (approval gate, never Hyatt Place, never Park Street, venue + city only, never a street address). Shared by the home page and `/links/`; before it, each page had its own copy and the two had drifted. It also builds the schema.org `Event` for the stop each page shows (`eventSchema`), from that same record — so the search result cannot advertise a date the page hides or a street the site never prints.
+- `assets/subscribe.js` — the email signup. Posts one address to this site's own `/api/subscribe` (no third-party form, no tracking); on a host that serves files but runs no code (GitHub Pages) it hands the address to the visitor's mail app instead of pretending it was saved.
+- `sitemap.xml`, `robots.txt` — the three indexable pages (`/`, `/links/`, `/circuit/`), with robots pointing at the sitemap. `/shop/` is `noindex` and `/jaysteel-hq/` is disallowed, so neither is listed; `test/asset-versions.test.mjs` checks every entry against the files in the repo.
 - `assets/theme-init.js` + `assets/steel-nav.js` — theme applied before first paint; Dark / Light / Match phone saved in `localStorage` `jsj-theme`.
 - `contact.js` — Contact form builds a `mailto:` in the visitor's own mail app. No backend, nothing stored.
 - `season.ics` — the whole public season as one calendar subscription, linked from `/links/`. Built by `scripts/season-ics.mjs` from the same `assets/events-core.js` rules as the pages (approval gate, venue + city only, no street address) and rewritten by `npm run sync:events`; `test/events-data.test.mjs` byte-compares it against a fresh build, so it cannot drift from the feed. Each event links to `/links/`, never back to the calendar file a subscriber already has, and carries a display reminder at 19:00 the evening before — a subscription that tells people about a stop instead of waiting to be opened. `/links/` offers it as a subscription — `webcal://` for Apple Calendar, Google's `cid=webcal://…` add-by-URL for Google, and a plain download as the fallback — so a visitor subscribes once instead of saving one stale copy.
 - `data/latest_post.json` + `assets/latest/post.jpg` — written by Tab's latest-post updater; with no file the page shows "Follow @JaySteelJewelry". A missing file is fine, an old one is not: the home page will happily promote a market that already happened, so `npm run check:freshness` ages the post's own date on the same 14/30-day thresholds as the feed.
 - `scripts/sync_inventory.py` + `.github/workflows/shop-sync.yml` — POS → `shop/products.json`, still running for a future reopening.
+- `scripts/asset-versions.mjs` — every `?v=` in the pages (and the Circuit's precache list and cache name) is the content hash of the file it names, so a rewrite is a cache key that changes exactly when the bytes do. `npm run version:assets` writes them, `npm run check:assets` fails when one is stale, and `test.yml` runs the check.
 
 ## The Circuit — the market app
 
@@ -66,6 +69,7 @@ The static site cannot price an order, which is why the old checkout was removed
 | `GET /api/products` | Public products from Postgres (display only). |
 | `POST /api/orders` | Body `{ items: [{ sku, qty }] }`. Re-reads every price from the database, computes the total in integer cents, creates the PayPal order server-side, records it. Returns `{ id, reference, totalCents }`. |
 | `POST /api/capture` | Body `{ orderID }`. Captures the approved PayPal order, refuses if the captured amount differs from the recorded total, marks it paid and decrements stock once. |
+| `POST /api/subscribe` | Body `{ email }`. Stores one lowercased address in `subscribers`, once; a repeat is a no-op and the answer is the same either way, so the route cannot be used to test membership. Cross-origin posts, non-JSON bodies and junk addresses are refused. |
 
 Rules enforced in `server/pricing.mjs`: integer cents only; unknown/inactive/out-of-stock items refused; ≤10 of one piece and ≤25 lines; mixed currencies refused; anything the browser says about price, name or total is ignored. `server/http.mjs` rejects cross-origin posts, non-JSON bodies and bodies over 8 KB.
 
@@ -80,11 +84,11 @@ Handlers speak standard `Request`/`Response`. `api/*.mjs` bridges them to Vercel
 | `PAYPAL_ENV` | server only | `sandbox` (default) or `live`. |
 | `SITE_ORIGIN` | server only | e.g. `https://your-project.vercel.app` — the only origin allowed to post orders. |
 
-Until `DATABASE_URL` and the PayPal pair are set, every `/api/*` route answers **503 `shop_not_open`** and the shop stays the coming-soon page. That is the current state, by design.
+Until `DATABASE_URL` and the PayPal pair are set, every shop route answers **503 `shop_not_open`** and the shop stays the coming-soon page. That is the current state, by design. `/api/subscribe` follows the same rule, answering **503 `signup_not_open`**: the home page then finishes the signup through the visitor's mail app, so an address is never silently dropped.
 
 ### Reopening the shop — the go-live checklist
 
-1. `psql "$DATABASE_URL" -f db/schema.sql` — create `products`, `orders`, `order_items`.
+1. `psql "$DATABASE_URL" -f db/schema.sql` — create `products`, `orders`, `order_items` and `subscribers`.
 2. Put real prices in the table: `node db/seed.mjs --file products.json` (or `--print` first to inspect the rows). Prices are converted to integer cents once, at import.
 3. Set the four environment variables above on the host.
 4. Build the storefront UI: read `/api/products`, then on "Checkout" call `POST /api/orders` and hand the returned `id` to the PayPal JS SDK (`createOrder: () => fetch("/api/orders", …)` — the guard test allows exactly that), then `POST /api/capture` on approval.
@@ -102,6 +106,8 @@ Every workflow is pinned to commit SHAs, and `test/security.test.mjs` fails the 
 | `smoke.yml` | every push to `main`, daily, and on demand | `node scripts/smoke.mjs`: asks the live origin, not the repo — every page 200, the feed parses with `city` and no `address`, `season.ics` is a calendar with stops and no street, every `?v=` asset the home page asks for exists, a missing path is a 404, the live home page is on the published commit's asset version, and the live `season.ics` lists exactly the stops the live feed does, links each one to `/links/` and carries a reminder for each. Triggered by the push itself (not by GitHub's internal Pages workflow name) and retries for ~2 min while Pages publishes. It also ages the live feed and calendar and warns (annotated on the run) when either is older than two weeks. |
 | `shop-sync.yml` | every 30 min | POS → `shop/products.json`, skipped until the POS key is set. |
 
+**Nothing hand-maintains a cache key.** `scripts/asset-versions.mjs` writes each `?v=` as the first 8 hex digits of the asset's SHA-1, and the Circuit's cache name as a hash of its shell, so editing a stylesheet and forgetting to bump a number is no longer possible. `npm run check:assets` is a `test.yml` step, and `test/asset-versions.test.mjs` fails on any stale reference. The live smoke now recognises hashed versions (`/assets/…?v=[0-9a-f]{8}`) and still fails when the published page is behind this commit.
+
 **The feed is served from this repo.** `data/events.json` is a *projection*: only the fields the pages render (id, name, series, kind, status, paid, dates and times, venue, city) plus feed-level `updated`/`timezone`. Notes, fees, contacts, application state and next steps stay in the logistics repo — `scripts/feed-projection.mjs` is the single list, and `test/events-data.test.mjs` fails if anything else appears. Street addresses don't ship either: the sync turns the upstream `address` into `city` once, so the public file says `"Jacksonville, FL"` and nothing more.
 
 `npm run sync:events` does the same thing by hand (and is what the cron runs), with `EVENTS_SOURCE=<url>` to point at a different upstream. A failed validation writes nothing.
@@ -116,7 +122,7 @@ The home page's "Latest post" has the same blind spot one file over. `data/lates
 
 ```bash
 npm start          # http://localhost:8787 — the site and /api/* on one origin
-npm test           # node --test test/ (68 tests, no network)
+npm test           # node --test test/ (78 tests, no network)
 npm run check:freshness   # feed, /season.ics and the home page's latest post still current? (warn 14 days, fail 30)
 node db/seed.mjs --print --file products.json   # inspect seed rows without a database
 ```
@@ -129,6 +135,8 @@ No install step: there are no dependencies.
 - Every page carries a `Content-Security-Policy` meta tag (GitHub Pages cannot send headers); Netlify additionally sends it as a header with HSTS and `frame-ancestors 'none'`.
 - No inline script: the share buttons live in `links/share.js`, the menu in `assets/steel-nav.js`.
 - Contact form strips control characters from name/email/subject so a typed name cannot inject mail headers.
+- The email signup stores one address (lowercased, with the page it came from) in `subscribers` when this repo is served by its Node API; it pulls no third-party script, sets no cookie, and is not used to send anything automatically. On GitHub Pages the same form finishes through the visitor's own mail client.
+- The schema.org `Event` for the next market is generated from the already-filtered public event, so a structured-data crawler sees the same venue + city the page does — never a street address.
 - No credentials in the repo: POS keys live in GitHub Actions secrets, server keys in the host's environment, and workflow actions are pinned to commit SHAs.
 - The shop never trusts a browser-supplied price; `test/shop-api.test.mjs` asserts that a tampered cart still charges the database price.
 - `test/security.test.mjs` enforces the CSP, inline-script, safe-link and pinned-action rules; `test/shop.test.mjs` fails if a page script builds a PayPal order itself.
