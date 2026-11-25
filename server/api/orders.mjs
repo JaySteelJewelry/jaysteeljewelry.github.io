@@ -4,11 +4,15 @@
  * The browser sends { items: [{ sku, qty }] } and nothing else that matters. Every name and price is
  * re-read from the products table here, so a tampered cart (or a price typed into devtools) cannot
  * change what PayPal charges. This replaces the deleted shop/checkout.js, which did the opposite.
+ *
+ * A created order is queued as an `order.created` webhook (see server/webhooks.mjs), keyed on our own
+ * reference so a retried request cannot announce the same order twice.
  */
 import { findProducts, neonClient } from "../db.mjs";
 import { CartError, normalizeCart, priceCart } from "../pricing.mjs";
 import { createPayPalOrder, isPayPalConfigured, paypalConfig } from "../paypal.mjs";
 import { json, methodNotAllowed, readJson, sameOrigin } from "../http.mjs";
+import { WEBHOOK_EVENTS, sendWebhook } from "../webhooks.mjs";
 
 const INSERT_ORDER = `
 with o as (
@@ -24,7 +28,7 @@ returning order_id`;
 /**
  * @param {Request} req
  * @param {Record<string,string|undefined>} [env]
- * @param {{db?:{query:(text:string,params?:unknown[])=>Promise<Record<string,unknown>[]>}, paypal?:{create:(priced:unknown)=>Promise<{id:string}>}}} [deps]
+ * @param {{db?:{query:(text:string,params?:unknown[])=>Promise<Record<string,unknown>[]>}, paypal?:{create:(priced:unknown)=>Promise<{id:string}>}, svix?:any}} [deps]
  */
 export async function handleOrders(req, env = process.env, deps = {}) {
   if (req.method !== "POST") return methodNotAllowed(req.method, ["POST"]);
@@ -88,6 +92,18 @@ export async function handleOrders(req, env = process.env, deps = {}) {
     // The PayPal order exists but we could not record it: refuse rather than hand back a payable id.
     return json({ error: "order_not_saved" }, 502);
   }
+
+  await sendWebhook(
+    WEBHOOK_EVENTS.orderCreated,
+    {
+      reference,
+      totalCents: priced.totalCents,
+      currency: priced.currency,
+      items: priced.items.map((i) => ({ sku: i.sku, qty: i.qty, unitCents: i.unitCents })),
+    },
+    env,
+    { ...deps, idempotencyKey: `order-created-${reference}` },
+  );
 
   return json({ id: order.id, reference, totalCents: priced.totalCents, currency: priced.currency }, 201);
 }

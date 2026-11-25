@@ -21,6 +21,9 @@ create table if not exists orders (
   paypal_order_id text        unique not null,
   status          text        not null default 'created'
                               check (status in ('created','paid','amount_mismatch','cancelled','refunded')),
+  -- PayPal's own capture status (COMPLETED, PENDING, ...), kept so a recovered `order.paid` event
+  -- carries the same status as the original instead of guessing.
+  capture_status  text,
   total_cents     integer     not null check (total_cents >= 0),
   currency        char(3)     not null default 'USD',
   created_at      timestamptz not null default now(),
@@ -46,10 +49,3 @@ create table if not exists subscribers (
   source     text        not null default 'home',
   created_at timestamptz not null default now()
 );
-
--- The server reads products through this view so a rename of a column happens in one place.
-create or replace view public_products as
-  select sku, name, price_cents, currency, stock, image, description, sort_order
-    from products
-   where active = true
-   order by sort_order, name;

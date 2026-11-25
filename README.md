@@ -33,7 +33,7 @@ Jacksonville, FL. Live: https://jaysteeljewelry.github.io — one home: Next mar
 
 ## Stack and hosting
 
-**Language: plain HTML + CSS + JavaScript (ESM) on Node 20+, no build step, no dependencies.** React was considered and rejected: three static pages plus a handful of serverless routes do not need a component tree, and a bundler would put a build between a one-line copy change and the live site. Nothing here needs `npm install`.
+**Language: plain HTML + CSS + JavaScript (ESM) on Node 22+, no build step.** React was considered and rejected: three static pages plus a handful of serverless routes do not need a component tree, and a bundler would put a build between a one-line copy change and the live site. Its one dependency is `svix`, for outbound webhooks: the static pages still need no install and no build, but a checkout that runs the API does `npm install` first.
 
 **Hosting: Vercel, Hobby plan.** This repo is a personal, non-commercial project, so Vercel's free Hobby tier applies in full: the static site, Node functions at `/api/*`, real HTTP headers, preview deployments and instant rollback, all deployed from GitHub on push.
 
@@ -83,8 +83,41 @@ Handlers speak standard `Request`/`Response`. `api/*.mjs` bridges them to Vercel
 | `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` | server only | PayPal REST app credentials. |
 | `PAYPAL_ENV` | server only | `sandbox` (default) or `live`. |
 | `SITE_ORIGIN` | server only | e.g. `https://your-project.vercel.app` — the only origin allowed to post orders. |
+| `SVIX_API_KEY` | server only | Svix API token for outbound webhooks (see below). Empty keeps every webhook silent. |
+| `SVIX_APP_ID` | server only | Optional. An existing Svix application id; empty uses/creates the `jaysteeljewelry` app. |
+| `SVIX_SERVER_URL` | server only | Optional regional Svix API base, e.g. `https://api.eu.svix.com`. |
+
+`.env.example` lists the webhook names with empty values; copy it to a git-ignored `.env.local` (or set them in the host's dashboard) and never commit a filled-in copy.
 
 Until `DATABASE_URL` and the PayPal pair are set, every shop route answers **503 `shop_not_open`** and the shop stays the coming-soon page. That is the current state, by design. `/api/subscribe` follows the same rule, answering **503 `signup_not_open`**: the home page then finishes the signup through the visitor's mail app, so an address is never silently dropped.
+
+### Webhooks — the events leave through Svix
+
+The site's key events are queued to Svix (`server/webhooks.mjs`), which signs each delivery to the
+**Standard Webhooks** spec (`svix-id`, `svix-timestamp`, `svix-signature`) and owns the retries and the
+delivery log. A customer endpoint that is down for an hour still gets the event; a `fetch()` fired from
+inside the handler would have lost it.
+
+| Event | When | Payload |
+| --- | --- | --- |
+| `subscriber.created` | `POST /api/subscribe` inserts an address it did not already have | `{ email, source, subscribedAt }` |
+| `order.created` | `POST /api/orders` recorded the order | `{ reference, totalCents, currency, items: [{ sku, qty, unitCents }] }` |
+| `order.paid` | `POST /api/capture` marked the order paid and decremented stock | `{ reference, totalCents, status }` |
+
+Sending is best-effort by design: a Svix error (or a checkout with no `node_modules`) is logged and the
+visitor's request still succeeds, because the subscriber is stored and the money is captured either way.
+A repeat signup is not an event, and each message carries an idempotency key derived from its own
+reference, so a retried request cannot deliver the same event twice. Retries are safe in both
+directions: a capture that is retried after it already went through queues `order.paid` again under the
+same key, so an event whose first send never reached Svix is recovered, and one that did is collapsed
+instead of announced twice; only the request that actually moves the order to `paid` decrements stock.
+If `SVIX_API_KEY` is set but
+`SVIX_APP_ID` is not, the first event asks Svix for the `jaysteeljewelry` application
+(`application.getOrCreate`) — one key is enough to start. Subscribe an endpoint to those event types in
+the Svix dashboard (or API), and verify the signature with the endpoint secret Svix shows there
+(`new Webhook(secret).verify(payload, headers)`), not by trusting the body.
+
+`test/webhooks.test.mjs` covers the wiring with a fake Svix client — no network involved.
 
 ### Reopening the shop — the go-live checklist
 
@@ -100,7 +133,7 @@ Every workflow is pinned to commit SHAs, and `test/security.test.mjs` fails the 
 
 | Workflow | When | What |
 | --- | --- | --- |
-| `test.yml` | every push to `main`, every PR | `node --test test/` + `npm run check:events`, `check:assets` and `check:sitemap`. GitHub Pages publishes `main` directly, so this is the gate. |
+| `test.yml` | every push to `main`, every PR | `node --test test/*.test.mjs` + `npm run check:events`, `check:assets` and `check:sitemap`. GitHub Pages publishes `main` directly, so this is the gate. |
 | `feed-sync.yml` | daily, and on demand | `npm run sync:events`: pull the season feed, validate it, project it, rewrite `season.ics` and `sitemap.xml`, commit only when clean. |
 | `freshness.yml` | every push to `main`, daily, and on demand | `npm run check:freshness`: is what the site shows still current? Warns once the feed or `season.ics` reaches 14 days without an update and fails at 30, fails when the calendar disagrees with the feed (different stop count, or an older `DTSTAMP`), fails when the season has run out of dates, and ages the home page's latest post on the same thresholds. Runs half an hour after the feed sync. |
 | `smoke.yml` | every push to `main`, daily, and on demand | `node scripts/smoke.mjs`: asks the live origin, not the repo — every page 200, the feed parses with `city` and no `address`, `season.ics` is a calendar with stops and no street, every `?v=` asset the home page asks for exists, a missing path is a 404, the live home page is on the published commit's asset version, and the live `season.ics` lists exactly the stops the live feed does, links each one to `/links/` and carries a reminder for each. Triggered by the push itself (not by GitHub's internal Pages workflow name) and retries for ~2 min while Pages publishes. It also ages the live feed and calendar and warns (annotated on the run) when either is older than two weeks. |
@@ -124,12 +157,13 @@ The home page's "Latest post" has the same blind spot one file over. `data/lates
 
 ```bash
 npm start          # http://localhost:8787 — the site and /api/* on one origin
-npm test           # node --test test/ (81 tests, no network)
+npm test           # node --test test/*.test.mjs (91 tests, no network)
 npm run check:freshness   # feed, /season.ics and the home page's latest post still current? (warn 14 days, fail 30)
 node db/seed.mjs --print --file products.json   # inspect seed rows without a database
 ```
 
-No install step: there are no dependencies.
+`npm install` once: the API's one dependency is the Svix webhook SDK. The static pages themselves still
+need no build and no install, and with no `SVIX_API_KEY` the webhooks stay silent.
 
 ## Security & data handling
 

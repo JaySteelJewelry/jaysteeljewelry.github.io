@@ -8,11 +8,15 @@
  *
  * With no DATABASE_URL (the shop is closed and Pages runs no code) it answers 503; the home page then
  * hands the address to the visitor's own mail app rather than pretending it was saved.
+ *
+ * A genuinely new address is also queued as a `subscriber.created` webhook (see server/webhooks.mjs),
+ * so a list tool hears about the signup without polling the table. A repeat post is not an event.
  */
 import { neonClient } from "../db.mjs";
 import { json, methodNotAllowed, readJson, sameOrigin } from "../http.mjs";
+import { WEBHOOK_EVENTS, eventId, sendWebhook } from "../webhooks.mjs";
 
-const INSERT = `insert into subscribers (email, source) values (lower($1), $2) on conflict (email) do nothing`;
+const INSERT = `insert into subscribers (email, source) values (lower($1), $2) on conflict (email) do nothing returning email`;
 const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
 
 /** One line, no control characters, no surrounding space: a typed value cannot smuggle in a header. */
@@ -24,7 +28,7 @@ export function cleanEmail(value) {
 /**
  * @param {Request} req
  * @param {Record<string,string|undefined>} [env]
- * @param {{db?:{query:(text:string,params?:unknown[])=>Promise<unknown>}}} [deps]
+ * @param {{db?:{query:(text:string,params?:unknown[])=>Promise<Record<string,unknown>[]>}, svix?:any}} [deps]
  */
 export async function handleSubscribe(req, env = process.env, deps = {}) {
   if (req.method !== "POST") return methodNotAllowed(req.method, ["POST"]);
@@ -38,10 +42,20 @@ export async function handleSubscribe(req, env = process.env, deps = {}) {
   const source = String((body && body.source) || "home").replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "home";
 
   const db = deps.db || neonClient(env.DATABASE_URL);
+  let inserted;
   try {
-    await db.query(INSERT, [email, source]);
+    inserted = await db.query(INSERT, [email, source]);
   } catch {
     return json({ error: "signup_unavailable" }, 503);
+  }
+
+  if (inserted && inserted.length) {
+    await sendWebhook(
+      WEBHOOK_EVENTS.subscriberCreated,
+      { email, source, subscribedAt: new Date().toISOString() },
+      env,
+      { ...deps, idempotencyKey: `subscriber-created-${eventId(email)}` },
+    );
   }
   return json({ ok: true }, 202);
 }

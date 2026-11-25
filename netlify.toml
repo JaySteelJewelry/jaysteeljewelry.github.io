@@ -13,7 +13,7 @@
   functions = "netlify/functions"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
 
 # Security headers for every response. These duplicate and strengthen the per-page <meta> CSP, which stays
 # in place so the same files remain safe when served by GitHub Pages.

@@ -1,14 +1,14 @@
 {
   "name": "jaysteeljewelry",
   "private": true,
-  "description": "JAY STEEL JEWELRY site: static pages at the repo root, plus a dependency-free Node API for the shop.",
+  "description": "JAY STEEL JEWELRY site: static pages at the repo root, plus a Node API for the shop and Svix-signed outbound webhooks.",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "start": "node server/dev.mjs",
     "dev": "node server/dev.mjs",
-    "test": "node --test test/",
+    "test": "node --test test/*.test.mjs",
     "check:events": "node scripts/validate-events.mjs",
     "check:freshness": "node scripts/freshness.mjs",
     "check:assets": "node scripts/asset-versions.mjs --check",
@@ -20,6 +20,7 @@
     "seed": "node db/seed.mjs",
     "seed:print": "node db/seed.mjs --print"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "svix": "2.11.1"
+  }
 }
