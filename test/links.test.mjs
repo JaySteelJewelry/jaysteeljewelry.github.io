@@ -86,6 +86,11 @@ test('shell: title, viewport, OG image, local assets exist, no innerHTML', () =>
   // The whole season is subscribable, and the page that lists the dates offers it.
   assert.match(html, /<link rel="alternate" type="text\/calendar"[^>]*href="\/season\.ics"/);
   assert.match(html, /href="\/season\.ics"/);
+  // Subscribe, don't just download: Apple/Google get a subscription URL, the file is the fallback.
+  assert.match(html, /href="webcal:\/\/jaysteeljewelry\.github\.io\/season\.ics"/);
+  assert.match(html, /href="https:\/\/calendar\.google\.com\/calendar\/render\?cid=webcal%3A%2F%2Fjaysteeljewelry\.github\.io%2Fseason\.ics"/);
+  assert.match(html, /href="\/season\.ics"[^>]*download="jay-steel-season\.ics"/);
+  assert.match(css, /\.subs__row/);
   assert.match(html, /property="og:image" content="https:\/\/jaysteeljewelry\.github\.io\/assets\/og-steel\.jpg"/);
   for (const m of html.matchAll(/(?:src|href|srcset)="(\/[^"?#]+)/g)) if (m[1] !== '/jaysteel-market-logistics-app/' && m[1] !== '/') assert.ok(existsSync(R + m[1].slice(1)), 'missing ' + m[1]);
   for (const m of html.matchAll(/(?:src|href)="([a-z][\w.-]+\.(?:js|css))/g)) assert.ok(existsSync(D + m[1]), 'missing ' + m[1]);

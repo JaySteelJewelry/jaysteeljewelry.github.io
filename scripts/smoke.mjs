@@ -6,6 +6,8 @@
    It also ages the live feed and the live calendar. A stale season is not a deploy failure — the site is
    up and correct, just old — so those print as warnings (and GitHub annotations) rather than failing the
    retry loop. The hard gate is .github/workflows/freshness.yml, which uses the same thresholds.
+   An *inconsistent* calendar is a deploy failure: the live /season.ics must list the same stops the live
+   feed does, point every one of them at /links/, and carry a reminder for each.
 
    Run by .github/workflows/smoke.yml after GitHub Pages publishes (and once a day), or by hand:
      node scripts/smoke.mjs
@@ -14,7 +16,12 @@
    check is retried a few times before the run is allowed to fail. */
 
 import { readFile } from "node:fs/promises";
-import { WARN_DAYS, ageDays, feedAsOf, seasonAsOf, todayET } from "./freshness.mjs";
+import { createRequire } from "node:module";
+import { WARN_DAYS, ageDays, feedAsOf, seasonAsOf, stopsInIcs, todayET } from "./freshness.mjs";
+
+// The same market rules and calendar builders the pages and /season.ics use, so the live copy is judged
+// against the live feed rather than against whatever this checkout happens to contain.
+const core = createRequire(import.meta.url)("../assets/events-core.js");
 
 const ORIGIN = (process.env.SMOKE_ORIGIN || "https://jaysteeljewelry.github.io").replace(/\/+$/, "");
 const TRIES = Number(process.env.SMOKE_TRIES || 8);
@@ -36,6 +43,8 @@ async function check() {
   const bad = [];
   const pages = {};
   let liveFeedDay = "";
+  let liveFeed = null;
+  let liveApproved = null;
 
   for (const path of PAGES) {
     const r = await get(path);
@@ -53,6 +62,7 @@ async function check() {
     if (/"address"\s*:/.test(feed.body)) bad.push("/data/events.json carries a street address");
     let json = null;
     try { json = JSON.parse(feed.body); } catch (e) { bad.push("/data/events.json is not JSON"); }
+    liveFeed = json;
     const events = json && (Array.isArray(json) ? json : json.events);
     if (!Array.isArray(events) || !events.length) bad.push("/data/events.json has no events");
     else if (!events.every((e) => e && e.id && e.date && e.city)) bad.push("an event is missing id, date or city");
@@ -61,6 +71,10 @@ async function check() {
     const feedAge = ageDays(liveFeedDay, todayET());
     if (Number.isFinite(feedAge) && feedAge >= WARN_DAYS) note(`stale feed: the live data/events.json says updated ${liveFeedDay}, ${feedAge} days ago`);
   }
+
+  // The allowlist decides which stops are public; the stop count below applies the same rules the builder did.
+  const appr = await get("/data/approved_events.json");
+  if (appr.status === 200) { try { liveApproved = JSON.parse(appr.body); } catch (e) { /* count check is skipped */ } }
 
   // /season.ics is built beside the feed: it must be a real calendar and carry the same no-street rule.
   const season = await get("/season.ics");
@@ -75,6 +89,20 @@ async function check() {
     if (!built) note("the live /season.ics has no DTSTAMP, so its age cannot be checked");
     else if (Number.isFinite(icsAge) && icsAge >= WARN_DAYS) note(`stale calendar: the live /season.ics was built ${built}, ${icsAge} days ago`);
     if (built && liveFeedDay && built < liveFeedDay) note(`the live /season.ics (${built}) lags the live feed (${liveFeedDay})`);
+
+    // A subscriber follows this file for months: it has to say where to find us and tell them when to go.
+    const stops = stopsInIcs(season.body);
+    const urls = (season.body.match(/^URL:[^\r\n]*/gm) || []).map((l) => l.trim());
+    if (urls.length !== stops || urls.some((u) => u !== "URL:" + core.LINKS_PAGE)) {
+      bad.push(`/season.ics links its stops somewhere other than ${core.LINKS_PAGE}`);
+    }
+    const alarms = (season.body.match(/^BEGIN:VALARM$/gm) || []).length;
+    if (alarms !== stops) bad.push(`/season.ics carries ${alarms} reminder(s) for ${stops} stop(s)`);
+    // The calendar is generated from the feed, so the two live copies must agree on the season itself.
+    if (liveFeed && liveApproved) {
+      const want = core.pickEvents(core.usableEvents(liveFeed), null, liveApproved, { includePast: true }).length;
+      if (want !== stops) bad.push(`/season.ics lists ${stops} stop(s) but the live feed has ${want}: run the season sync`);
+    }
   }
 
   // Every versioned asset the home page asks for must exist: a stale ?v= after a bump is a 404 for the site.
