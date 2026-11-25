@@ -11,8 +11,8 @@ Jacksonville, FL. Live: https://jaysteeljewelry.github.io — one home: Next mar
 - `assets/events-core.js` — **the** market rules (approval gate, never Hyatt Place, never Park Street, venue + city only, never a street address). Shared by the home page and `/links/`; before it, each page had its own copy and the two had drifted.
 - `assets/theme-init.js` + `assets/steel-nav.js` — theme applied before first paint; Dark / Light / Match phone saved in `localStorage` `jsj-theme`.
 - `contact.js` — Contact form builds a `mailto:` in the visitor's own mail app. No backend, nothing stored.
-- `season.ics` — the whole public season as one calendar subscription, linked from `/links/`. Built by `scripts/season-ics.mjs` from the same `assets/events-core.js` rules as the pages (approval gate, venue + city only, no street address) and rewritten by `npm run sync:events`; `test/events-data.test.mjs` byte-compares it against a fresh build, so it cannot drift from the feed.
-- `data/latest_post.json` + `assets/latest/post.jpg` — written by Tab's latest-post updater; with no file the page shows "Follow @JaySteelJewelry".
+- `season.ics` — the whole public season as one calendar subscription, linked from `/links/`. Built by `scripts/season-ics.mjs` from the same `assets/events-core.js` rules as the pages (approval gate, venue + city only, no street address) and rewritten by `npm run sync:events`; `test/events-data.test.mjs` byte-compares it against a fresh build, so it cannot drift from the feed. Each event links to `/links/`, never back to the calendar file a subscriber already has, and carries a display reminder at 19:00 the evening before — a subscription that tells people about a stop instead of waiting to be opened.
+- `data/latest_post.json` + `assets/latest/post.jpg` — written by Tab's latest-post updater; with no file the page shows "Follow @JaySteelJewelry". A missing file is fine, an old one is not: the home page will happily promote a market that already happened, so `npm run check:freshness` ages the post's own date on the same 14/30-day thresholds as the feed.
 - `scripts/sync_inventory.py` + `.github/workflows/shop-sync.yml` — POS → `shop/products.json`, still running for a future reopening.
 
 ## The Circuit — the market app
@@ -98,7 +98,7 @@ Every workflow is pinned to commit SHAs, and `test/security.test.mjs` fails the 
 | --- | --- | --- |
 | `test.yml` | every push to `main`, every PR | `node --test test/` + `npm run check:events`. GitHub Pages publishes `main` directly, so this is the gate. |
 | `feed-sync.yml` | daily, and on demand | `npm run sync:events`: pull the season feed, validate it, project it, rewrite `season.ics`, commit only when clean. |
-| `freshness.yml` | every push to `main`, daily, and on demand | `npm run check:freshness`: is the season still current? Warns past 14 days without a feed update or a `season.ics` rebuild and fails past 30, fails when the calendar disagrees with the feed (different stop count, or an older `DTSTAMP`), and fails when the season has run out of dates. Runs half an hour after the feed sync. |
+| `freshness.yml` | every push to `main`, daily, and on demand | `npm run check:freshness`: is what the site shows still current? Warns once the feed or `season.ics` reaches 14 days without an update and fails at 30, fails when the calendar disagrees with the feed (different stop count, or an older `DTSTAMP`), fails when the season has run out of dates, and ages the home page's latest post on the same thresholds. Runs half an hour after the feed sync. |
 | `smoke.yml` | every push to `main`, daily, and on demand | `node scripts/smoke.mjs`: asks the live origin, not the repo — every page 200, the feed parses with `city` and no `address`, `season.ics` is a calendar with stops and no street, every `?v=` asset the home page asks for exists, a missing path is a 404, and the live home page is on the published commit's asset version. Triggered by the push itself (not by GitHub's internal Pages workflow name) and retries for ~2 min while Pages publishes. It also ages the live feed and calendar and warns (annotated on the run) when either is older than two weeks. |
 | `shop-sync.yml` | every 30 min | POS → `shop/products.json`, skipped until the POS key is set. |
 
@@ -108,14 +108,16 @@ Every workflow is pinned to commit SHAs, and `test/security.test.mjs` fails the 
 
 **A stale season is not a broken one, which is why nothing used to notice it.** Every page keeps answering 200, `check:events` keeps saying the rows are well-formed, and `season.ics` stays byte-identical to a fresh build of the same old feed — the site just quietly keeps serving last month's dates, and a paused sync shows up as a calendar that never changes. `npm run check:freshness` (`scripts/freshness.mjs`) ages both shipped files: the feed's `updated` day and the newest `DTSTAMP` in `season.ics`, warning at 14 days and failing at 30 (`FRESH_WARN_DAYS` / `FRESH_FAIL_DAYS` override both). It also fails when the two disagree — the calendar lists a different number of stops than the feed, or is dated before it — and when a recent feed has run out of dates, so yesterday's markets cannot read as a new season. The thresholds live in one module, so `scripts/smoke.mjs` warns about the copy actually being served using the same numbers.
 
+The home page's "Latest post" has the same blind spot one file over. `data/latest_post.json` is written by an updater on Tab's box, and whatever is in it renders — a three-week-old post advertising a market that already happened looks exactly as fresh as yesterday's. So the same check ages the post's own `latest.date` against the same 14/30 days. No file at all stays fine (the page falls back to "Follow @JaySteelJewelry"); a file that cannot be parsed fails, because it silently drops a section of the home page.
+
 `node scripts/smoke.mjs` runs the live check locally (`SMOKE_ORIGIN=…` for another host); it is what `smoke.yml` runs after a deploy. `npm run season:ics` rebuilds only the subscription (the sync does both).
 
 ## Local development
 
 ```bash
 npm start          # http://localhost:8787 — the site and /api/* on one origin
-npm test           # node --test test/ (66 tests, no network)
-npm run check:freshness   # are the season feed and /season.ics still current? (warn 14 days, fail 30)
+npm test           # node --test test/ (68 tests, no network)
+npm run check:freshness   # feed, /season.ics and the home page's latest post still current? (warn 14 days, fail 30)
 node db/seed.mjs --print --file products.json   # inspect seed rows without a database
 ```
 

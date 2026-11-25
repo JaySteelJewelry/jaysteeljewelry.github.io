@@ -15,6 +15,10 @@
    The same thresholds drive the warnings in scripts/smoke.mjs, so the local run, the daily workflow
    and the post-deploy check cannot disagree about what "old" means.
 
+   It ages data/latest_post.json with the same numbers. That file is valid JSON and the home page
+   renders whatever it contains, so a post from a fortnight ago advertising a market that already
+   happened looks exactly like a fresh one — and nothing else in the pipeline reads its date.
+
    Exits 1 on a real problem, 0 on warnings only. Under GitHub Actions it also writes ::warning::/::error::
    annotations and a step summary, so an old season shows up on the run itself instead of only in a log. */
 
@@ -55,6 +59,13 @@ export function seasonAsOf(ics) {
   );
 }
 
+/** The day the home page's latest post was published — or, failing that, when the updater last ran.
+    `latest_post.json` is valid JSON at any age, so the post's own date is the only honest "as of". */
+export function postAsOf(post) {
+  const p = post && post.latest;
+  return ymd(p && p.date) || ymd(post && post.updated_at);
+}
+
 /** How many stops the calendar actually carries — compared against the feed, never trusted alone. */
 export function stopsInIcs(ics) {
   return String(ics || "")
@@ -92,11 +103,11 @@ export function assess(opts) {
   // 1. Is the feed itself moving?
   if (!feedDay) {
     errors.push("data/events.json has no `updated` date, so there is no way to tell how old it is.");
-  } else if (age(feedDay) > failDays) {
+  } else if (age(feedDay) >= failDays) {
     errors.push(
       `data/events.json was last updated ${age(feedDay)} days ago (${feedDay}): the site is shipping old dates.`,
     );
-  } else if (age(feedDay) > warnDays) {
+  } else if (age(feedDay) >= warnDays) {
     warnings.push(
       `data/events.json was last updated ${age(feedDay)} days ago (${feedDay}) — the daily sync has not changed it in over ${warnDays} days.`,
     );
@@ -105,11 +116,11 @@ export function assess(opts) {
   // 2. Is the subscription being rebuilt? A calendar frozen at an old date is the part a visitor keeps.
   if (!icsDay) {
     errors.push("season.ics has no DTSTAMP, so there is no way to tell when it was built.");
-  } else if (age(icsDay) > failDays) {
+  } else if (age(icsDay) >= failDays) {
     errors.push(
       `season.ics was built ${age(icsDay)} days ago (${icsDay}): subscribers are following a calendar that never refreshes.`,
     );
-  } else if (age(icsDay) > warnDays) {
+  } else if (age(icsDay) >= warnDays) {
     warnings.push(`season.ics was built ${age(icsDay)} days ago (${icsDay}) — check that the daily sync still runs.`);
   }
 
@@ -134,11 +145,27 @@ export function assess(opts) {
   const last = lastStopDate(o.feed);
   if (!ahead) {
     const past = last ? core.daysBetween(last, today) : NaN;
-    if (past > failDays) {
+    if (past >= failDays) {
       errors.push(`the last public stop was ${last}, ${past} days ago — there is no season left to show.`);
     } else {
       warnings.push(`no public stops are ahead of today${last ? ` (the last one was ${last})` : ""}.`);
     }
+  }
+
+  // 5. Is the home page still promoting something? A two-week-old post advertising a market that has
+  //    already happened reads as current, because the file never changes when the updater stops.
+  const showsPost = !!(o.post && o.post.latest);
+  const postDay = postAsOf(o.post);
+  if (showsPost && !postDay) {
+    errors.push("data/latest_post.json has no post date, so there is no way to tell how old the home page's post is.");
+  } else if (postDay && age(postDay) >= failDays) {
+    errors.push(
+      `data/latest_post.json is showing a post from ${postDay}, ${age(postDay)} days ago: the home page is still promoting it.`,
+    );
+  } else if (postDay && age(postDay) >= warnDays) {
+    warnings.push(
+      `data/latest_post.json is showing a post from ${postDay}, ${age(postDay)} days ago — the latest-post updater has stopped, or nothing new has come through.`,
+    );
   }
 
   return {
@@ -157,6 +184,9 @@ export function assess(opts) {
       feedStops: wantStops,
       upcoming: ahead,
       lastStop: last,
+      post: postDay,
+      postAge: age(postDay),
+      showsPost,
     },
   };
 }
@@ -168,7 +198,7 @@ function annotate(level, message) {
 
 async function main() {
   const read = (p) => readFile(new URL(p, R), "utf8");
-  let feed, ics, approved;
+  let feed, ics, approved, post;
   try {
     feed = JSON.parse(await read("data/events.json"));
   } catch (e) {
@@ -189,14 +219,26 @@ async function main() {
   } catch (e) {
     approved = { ids: [] };
   }
+  // No latest-post file at all is a valid state: the home page then says "Follow @JaySteelJewelry".
+  // Anything else — unreadable, invalid JSON — silently drops a section of the home page, so it fails.
+  try {
+    post = JSON.parse(await read("data/latest_post.json"));
+  } catch (e) {
+    if (e.code !== "ENOENT") {
+      console.error(`✖ data/latest_post.json: ${e.message}`);
+      process.exitCode = 1;
+      return;
+    }
+  }
 
-  const report = assess({ feed, ics, approved });
+  const report = assess({ feed, ics, approved, post });
   const f = report.facts;
   const ageText = (n) => (Number.isFinite(n) ? `${n} day${n === 1 ? "" : "s"} old` : "age unknown");
 
   console.log(`season freshness — ${f.today}`);
   console.log(`  feed      ${f.feed || "no date"} (${ageText(f.feedAge)})`);
   console.log(`  calendar  ${f.season || "no date"} (${ageText(f.seasonAge)}) — ${f.stops} stop(s), ${f.upcoming} ahead`);
+  console.log(`  post      ${f.post ? `${f.post} (${ageText(f.postAge)})` : "none on the page"}`);
   for (const w of report.warnings) {
     console.log(`  ⚠ ${w}`);
     annotate("warning", w);
@@ -205,7 +247,7 @@ async function main() {
     console.log(`  ✖ ${e}`);
     annotate("error", e);
   }
-  if (report.ok) console.log(`  OK — feed and calendar are both under ${f.failDays} days old.`);
+  if (report.ok) console.log(`  OK — nothing the site shows is older than ${f.failDays} days.`);
 
   if (process.env.GITHUB_STEP_SUMMARY) {
     const lines = [
@@ -216,6 +258,7 @@ async function main() {
       `| today | ${f.today} |`,
       `| feed updated | ${f.feed || "—"} (${ageText(f.feedAge)}) |`,
       `| season.ics built | ${f.season || "—"} (${ageText(f.seasonAge)}) |`,
+      `| latest post | ${f.post || "—"} (${f.showsPost ? ageText(f.postAge) : "none"}) |`,
       `| stops in calendar / in feed | ${f.stops} / ${f.feedStops} |`,
       `| stops ahead | ${f.upcoming} |`,
     ];

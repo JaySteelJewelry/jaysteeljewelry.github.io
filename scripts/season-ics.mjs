@@ -5,6 +5,8 @@
 
    The whole season is listed, not just the days still ahead: a calendar ignores what is already past,
    and this way the file depends only on the feed — a paused cron can make it old, never wrong.
+   Each event links to /links/ (not to this file, which a subscriber already has) and carries a
+   display reminder at 19:00 the evening before, so the subscription tells people about a stop.
    Regenerate by hand:  npm run season:ics */
 import { readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -12,8 +14,6 @@ import { createRequire } from "node:module";
 
 const R = new URL("../", import.meta.url);
 const core = createRequire(import.meta.url)("../assets/events-core.js");
-export const SEASON_URL = "https://jaysteeljewelry.github.io/season.ics";
-
 /* DTSTAMP comes from the feed's own `updated` date, so regenerating an unchanged feed produces an
    identical file. test/events-data.test.mjs byte-compares the committed copy against a fresh build. */
 function stampFor(feed) {
@@ -23,7 +23,7 @@ function stampFor(feed) {
 
 export function seasonICS(feed, approved) {
   const events = core.pickEvents(core.usableEvents(feed), null, approved, { includePast: true });
-  return core.buildSeasonICS(events, SEASON_URL, stampFor(feed));
+  return core.buildSeasonICS(events, stampFor(feed));
 }
 
 export function readApproved() {

@@ -303,3 +303,60 @@ test("the shipped feed and calendar agree right now", () => {
   assert.deepEqual(r.errors, []);
   assert.equal(r.facts.stops, r.facts.feedStops);
 });
+
+test("the season subscription points at the page and reminds subscribers the evening before", async () => {
+  const { seasonICS } = await import("../scripts/season-ics.mjs");
+  const feed = {
+    updated: "2026-11-09",
+    events: [good({ id: "a", date: "2026-12-13" }), good({ id: "b", date: "2026-12-20", start: "", end: "" })],
+  };
+  const ics = seasonICS(feed, { ids: ["a", "b"] });
+  const flat = ics.replace(/\r\n[ \t]/g, "");
+
+  // A subscriber already has the calendar; sending them back to the file is a dead end.
+  assert.doesNotMatch(ics, /season\.ics/, "no event may link to the calendar file itself");
+  assert.equal((flat.match(/URL:https:\/\/jaysteeljewelry\.github\.io\/links\//g) || []).length, 2);
+
+  assert.equal((ics.match(/BEGIN:VALARM/g) || []).length, 2, "one reminder per stop");
+  assert.equal((flat.match(/ACTION:DISPLAY/g) || []).length, 2);
+  // 11:00 minus 16 h is 19:00 the evening before; a date-only stop starts at midnight, so 5 h.
+  assert.match(ics, /TRIGGER:-PT16H\r\n/);
+  assert.match(ics, /TRIGGER:-PT5H\r\n/);
+  assert.match(flat, /DESCRIPTION:JAY STEEL JEWELRY at Riverside Fall Market tomorrow at 11 AM – 3 PM/);
+  assert.doesNotMatch(flat, /TRIGGER:\.|TRIGGER;VALUE=DATE-TIME/, "a relative trigger stays right in local time");
+
+  // A single downloaded stop is not a subscription, so it does not get one.
+  assert.doesNotMatch(core.buildICS(good({ id: "a", date: "2026-12-13" })), /VALARM/);
+});
+
+test("a latest post that stopped updating shows up, on the feed's own thresholds", () => {
+  const pair = (today) => ({
+    feed: freshFeed({ updated: today, events: [good({ date: "2027-06-13" })] }),
+    ics: icsBuilt(today.replace(/-/g, "") + "T120000Z"),
+    approved: { ids: [] },
+  });
+  const post = { updated_at: "2026-11-12T05:06:46Z", latest: { date: "2026-11-11T18:09:04Z", caption: "…" } };
+
+  const quiet = assess({ ...pair("2026-11-21"), post, today: "2026-11-21" }); // 10 days
+  assert.equal(quiet.ok, true);
+  assert.deepEqual(quiet.warnings, [], "inside the warn window is quiet");
+  assert.equal(quiet.facts.post, "2026-11-11");
+
+  const edge = assess({ ...pair("2026-11-25"), post, today: "2026-11-25" }); // exactly 14 days
+  assert.match(edge.warnings.join(" "), /14 days ago/, "the day it turns two weeks old is the day it speaks");
+
+  const warn = assess({ ...pair("2026-11-27"), post, today: "2026-11-27" }); // 16 days
+  assert.equal(warn.ok, true, "a stale post is a warning first, like the feed");
+  assert.match(warn.warnings.join(" "), /latest_post\.json is showing a post from 2026-11-11, 16 days ago/);
+  assert.match(warn.warnings.join(" "), /updater has stopped/);
+
+  const fail = assess({ ...pair("2026-12-12"), post, today: "2026-12-12" }); // 31 days
+  assert.equal(fail.ok, false);
+  assert.match(fail.errors.join(" "), /home page is still promoting it/);
+
+  // No post at all is a valid state: the page says "Follow @JaySteelJewelry".
+  const none = assess({ ...pair("2026-11-27"), post: { latest: null }, today: "2026-11-27" });
+  assert.equal(none.ok, true);
+  assert.deepEqual(none.warnings, []);
+  assert.equal(none.facts.post, "");
+});

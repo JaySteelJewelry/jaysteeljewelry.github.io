@@ -59,7 +59,7 @@ async function check() {
     // Parsing is not the same as current: a feed can be perfectly valid and months old.
     liveFeedDay = feedAsOf(json);
     const feedAge = ageDays(liveFeedDay, todayET());
-    if (Number.isFinite(feedAge) && feedAge > WARN_DAYS) note(`stale feed: the live data/events.json says updated ${liveFeedDay}, ${feedAge} days ago`);
+    if (Number.isFinite(feedAge) && feedAge >= WARN_DAYS) note(`stale feed: the live data/events.json says updated ${liveFeedDay}, ${feedAge} days ago`);
   }
 
   // /season.ics is built beside the feed: it must be a real calendar and carry the same no-street rule.
@@ -73,7 +73,7 @@ async function check() {
     const built = seasonAsOf(season.body);
     const icsAge = ageDays(built, todayET());
     if (!built) note("the live /season.ics has no DTSTAMP, so its age cannot be checked");
-    else if (Number.isFinite(icsAge) && icsAge > WARN_DAYS) note(`stale calendar: the live /season.ics was built ${built}, ${icsAge} days ago`);
+    else if (Number.isFinite(icsAge) && icsAge >= WARN_DAYS) note(`stale calendar: the live /season.ics was built ${built}, ${icsAge} days ago`);
     if (built && liveFeedDay && built < liveFeedDay) note(`the live /season.ics (${built}) lags the live feed (${liveFeedDay})`);
   }
 

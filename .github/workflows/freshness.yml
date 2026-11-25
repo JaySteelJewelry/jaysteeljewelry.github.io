@@ -1,6 +1,7 @@
 name: Season freshness
 # A stale season breaks nothing visible: every page answers, the calendar still parses, and the smoke
-# test passes — it just keeps shipping last month's dates. This workflow is the one that goes red for it.
+# test passes — it just keeps shipping last month's dates. The home page's latest post has the same
+# failure mode: a valid file promoting a market that already happened. This is the workflow that goes red.
 #
 # Two weeks with no change to the feed is a warning; a month is a failure. The same thresholds drive the
 # warnings in the live smoke, so the two checks cannot disagree. Runs half an hour after feed-sync.yml,
@@ -25,5 +26,5 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "20"
-      - name: Is the season still current?
+      - name: Is the season (and the latest post) still current?
         run: npm run check:freshness

@@ -183,6 +183,27 @@
 
   var LINKS_PAGE = "https://jaysteeljewelry.github.io/links/";
 
+  /* Minutes back from the start to 19:00 the evening before — the reminder trigger. Relative to
+     DTSTART, so it lands at the same local hour even across a daylight-saving change. A date-only
+     stop starts at midnight, so five hours is 19:00 the evening before. */
+  function eveningBefore(e) {
+    var start = isTime(e.start) && isTime(e.end) ? toMin(e.start) : 0;
+    return start + 5 * 60;
+  }
+  function duration(min) {
+    var h = Math.floor(min / 60), m = min % 60, s = "PT";
+    if (h) s += h + "H";
+    if (m) s += m + "M";
+    return s === "PT" ? "PT0M" : s;
+  }
+  /* A reminder the evening before, so a subscriber is told about a stop without opening anything.
+     Only the season subscription carries one: a single downloaded stop is not a subscription. */
+  function alarmLines(e) {
+    var timed = isTime(e.start) && isTime(e.end);
+    var when = "JAY STEEL JEWELRY at " + displayName(e.name) + " tomorrow" + (timed ? " at " + hours(e) : "");
+    return ["BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEsc(when), "TRIGGER:-" + duration(eveningBefore(e)), "END:VALARM"];
+  }
+
   /* Calendar files for /links/, the Circuit app and /season.ics: venue + city only, no street address,
      Eastern time. A VCALENDAR may carry exactly one VTIMEZONE, so the block belongs to whoever owns the
      file, not to each event — one builder for a single stop, and buildSeasonICS for the whole season. */
@@ -195,8 +216,9 @@
       "BEGIN:STANDARD", "TZOFFSETFROM:-0400", "TZOFFSETTO:-0500", "TZNAME:EST", "DTSTART:19701101T020000", "RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU", "END:STANDARD",
       "END:VTIMEZONE"];
   }
-  /** The VEVENT for one stop. dtstamp keeps a generated file byte-stable when nothing else changed. */
-  function eventLines(e, page, dtstamp) {
+  /** The VEVENT for one stop. dtstamp keeps a generated file byte-stable when nothing else changed.
+      `page` is the page a visitor should open, never the calendar file itself. */
+  function eventLines(e, page, dtstamp, alarm) {
     var link = page || LINKS_PAGE;
     var name = displayName(e.name), last = isDate(e.endDate) ? e.endDate : e.date, timed = isTime(e.start) && isTime(e.end);
     var L = ["BEGIN:VEVENT", "UID:" + icsEsc(String(e.id || compact(e.date) + "-" + name.replace(/\W+/g, "-").toLowerCase())) + "@jaysteeljewelry.github.io", "DTSTAMP:" + (dtstamp || stamp())];
@@ -208,16 +230,18 @@
       L.push("DTSTART;VALUE=DATE:" + compact(e.date), "DTEND;VALUE=DATE:" + compact(addDays(last, 1)));
     }
     L.push("SUMMARY:" + icsEsc("JAY STEEL JEWELRY at " + name), "LOCATION:" + icsEsc(place(e, ", ")),
-      "DESCRIPTION:" + icsEsc("Come find JAY STEEL JEWELRY at " + name + ". All our links: " + link), "URL:" + link,
-      "END:VEVENT");
+      "DESCRIPTION:" + icsEsc("Come find JAY STEEL JEWELRY at " + name + ". All our links: " + link), "URL:" + link);
+    if (alarm) L = L.concat(alarmLines(e));
+    L.push("END:VEVENT");
     return L;
   }
   function buildICS(e, page) {
     var L = headLines().concat(isTime(e.start) && isTime(e.end) ? tzBlock() : [], eventLines(e, page), ["END:VCALENDAR"]);
     return L.map(foldLine).join("\r\n") + "\r\n";
   }
-  /** The whole season as one subscribable calendar — the file behind /season.ics. */
-  function buildSeasonICS(events, page, dtstamp) {
+  /** The whole season as one subscribable calendar — the file behind /season.ics. Every event points
+      at /links/, never back at this file, and carries an evening-before reminder. */
+  function buildSeasonICS(events, dtstamp) {
     var list = (Array.isArray(events) ? events : []).filter(function (e) { return e && isDate(e.date); });
     var L = headLines().concat([
       "X-WR-CALNAME:JAY STEEL JEWELRY — the season",
@@ -226,7 +250,7 @@
       "REFRESH-INTERVAL;VALUE=DURATION:PT12H",
     ]);
     if (list.some(function (e) { return isTime(e.start) && isTime(e.end); })) L = L.concat(tzBlock());
-    list.forEach(function (e) { L = L.concat(eventLines(e, page, dtstamp)); });
+    list.forEach(function (e) { L = L.concat(eventLines(e, LINKS_PAGE, dtstamp, true)); });
     L.push("END:VCALENDAR");
     return L.map(foldLine).join("\r\n") + "\r\n";
   }
@@ -248,6 +272,6 @@
     displayName: displayName, cityOf: cityOf, place: place,
     fmtTime: fmtTime, hours: hours, dateRange: dateRange, shortDate: shortDate, pickEvents: pickEvents,
     icsEsc: icsEsc, foldLine: foldLine, addDays: addDays, compact: compact, daysBetween: daysBetween,
-    buildICS: buildICS, buildSeasonICS: buildSeasonICS, googleURL: googleURL
+    buildICS: buildICS, buildSeasonICS: buildSeasonICS, googleURL: googleURL, LINKS_PAGE: LINKS_PAGE
   };
 });
