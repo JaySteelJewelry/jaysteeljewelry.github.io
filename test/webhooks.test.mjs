@@ -152,6 +152,26 @@ test("a capture that loses the paid transition does not decrement stock a second
   assert.deepEqual(stock, [], "no stock write without the transition");
 });
 
+test("a capture PayPal has not completed is refused: no paid mark, no stock, no event", async () => {
+  const svix = fakeSvix();
+  const writes = [];
+  const db = {
+    query: async (text, params) => {
+      if (/select id, total_cents/.test(text)) return [{ id: "order-1", total_cents: 9000, status: "created", capture_status: null }];
+      writes.push({ text, params });
+      return [];
+    },
+  };
+  const paypal = { capture: async () => ({ status: "PENDING", amountCents: 9000 }) };
+  const res = await handleCapture(captureReq(), ENV, { db, paypal, svix });
+  assert.equal(res.status, 409);
+  assert.deepEqual(await res.json(), { error: "capture_not_completed", status: "PENDING" });
+  assert.ok(!writes.some((w) => /status = 'paid'|set stock/.test(w.text)), "no paid mark and no stock write");
+  const recorded = writes.find((w) => /where id = \$1 and status = 'created'/.test(w.text));
+  assert.deepEqual(recorded.params, ["order-1", "PENDING"], "the unpaid status stays visible on the order");
+  assert.equal(svix.sent.filter((c) => c.kind === "message").length, 0, "no order.paid for money that did not arrive");
+});
+
 test("a retried capture writes nothing, and re-queues order.paid under the same key", async () => {
   const svix = fakeSvix();
   const db = {

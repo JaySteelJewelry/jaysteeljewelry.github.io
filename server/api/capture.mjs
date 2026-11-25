@@ -6,6 +6,9 @@
  * refresh or a double tap cannot charge twice), and only the request that actually moves the row to
  * `paid` decrements stock, so two concurrent captures cannot take the same piece off the shelf twice.
  *
+ * A capture PayPal has not completed — PENDING for an eCheck, DECLINED, FAILED — is refused before the
+ * order is marked paid, so stock never leaves the shelf for money that has not arrived.
+ *
  * A paid order queues an `order.paid` webhook (server/webhooks.mjs), keyed on our own reference. A
  * retry of a capture that already went through queues it again under the same key: if the first
  * attempt could not reach Svix the event is recovered, and if it could, Svix collapses the duplicate,
@@ -86,13 +89,25 @@ export async function handleCapture(req, env = process.env, deps = {}) {
     return json({ error: "capture_failed" }, 502);
   }
 
+  // Only COMPLETED means money moved. A missing status is treated the way the PayPal client treats it
+  // (COMPLETED), so this guard refuses an explicitly unpaid capture rather than inventing one.
+  const captureStatus = String(captured.status || "").toUpperCase() || "COMPLETED";
+  if (captureStatus !== "COMPLETED") {
+    // Keep the status on the row so a pending capture is visible, but change nothing else: no paid
+    // mark, no stock, no `order.paid`. `.catch` because failing to record it must not change the answer.
+    await db
+      .query(`update orders set capture_status = $2 where id = $1 and status = 'created'`, [order.id, captureStatus])
+      .catch(() => {});
+    return json({ error: "capture_not_completed", status: captureStatus }, 409);
+  }
+
   if (captured.amountCents !== Number(order.total_cents)) {
     await db.query(`update orders set status = 'amount_mismatch' where id = $1 and status <> 'paid'`, [order.id]).catch(() => {});
     return json({ error: "amount_mismatch" }, 409);
   }
 
   try {
-    const marked = await db.query(MARK_PAID, [order.id, captured.status || "COMPLETED"]);
+    const marked = await db.query(MARK_PAID, [order.id, captureStatus]);
     // Empty rows mean another request won the transition (`returning id` is what tells us); stock
     // follows the win, so a concurrent or retried capture cannot take the piece off the shelf twice.
     const won = Array.isArray(marked) ? marked.length > 0 : true;
@@ -101,9 +116,9 @@ export async function handleCapture(req, env = process.env, deps = {}) {
     return json({ error: "order_not_updated" }, 502);
   }
 
-  await announcePaid(order, captured.status || "COMPLETED", env, deps);
+  await announcePaid(order, captureStatus, env, deps);
 
-  return json({ ok: true, status: captured.status || "COMPLETED", totalCents: Number(order.total_cents) });
+  return json({ ok: true, status: captureStatus, totalCents: Number(order.total_cents) });
 }
 
 export default handleCapture;

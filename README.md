@@ -67,8 +67,8 @@ The static site cannot price an order, which is why the old checkout was removed
 | Route | What it does |
 | --- | --- |
 | `GET /api/products` | Public products from Postgres (display only). |
-| `POST /api/orders` | Body `{ items: [{ sku, qty }] }`. Re-reads every price from the database, computes the total in integer cents, creates the PayPal order server-side, records it. Returns `{ id, reference, totalCents }`. |
-| `POST /api/capture` | Body `{ orderID }`. Captures the approved PayPal order, refuses if the captured amount differs from the recorded total, marks it paid and decrements stock once. |
+| `POST /api/orders` | Body `{ items: [{ sku, qty }], clientKey }` — `clientKey` is optional, but a cart should send one. Re-reads every price from the database, computes the total in integer cents, creates the PayPal order server-side, records it. Returns `{ id, reference, totalCents }`. The same `clientKey` again returns the same order (`200`, `replayed: true`) instead of creating a second one: it is the order reference, the PayPal `paypal-request-id` and the `order.created` idempotency key, so a double tap is safe. |
+| `POST /api/capture` | Body `{ orderID }`. Captures the approved PayPal order. Refuses a capture PayPal did not complete (anything but `COMPLETED`: `409 capture_not_completed`, nothing marked paid), refuses an amount that differs from the recorded total, then marks it paid and decrements stock once. |
 | `POST /api/subscribe` | Body `{ email }`. Stores one lowercased address in `subscribers`, once; a repeat is a no-op and the answer is the same either way, so the route cannot be used to test membership. Cross-origin posts, non-JSON bodies and junk addresses are refused. |
 
 Rules enforced in `server/pricing.mjs`: integer cents only; unknown/inactive/out-of-stock items refused; ≤10 of one piece and ≤25 lines; mixed currencies refused; anything the browser says about price, name or total is ignored. `server/http.mjs` rejects cross-origin posts, non-JSON bodies and bodies over 8 KB.
@@ -124,7 +124,7 @@ the Svix dashboard (or API), and verify the signature with the endpoint secret S
 1. `psql "$DATABASE_URL" -f db/schema.sql` — create `products`, `orders`, `order_items` and `subscribers`.
 2. Put real prices in the table: `node db/seed.mjs --file products.json` (or `--print` first to inspect the rows). Prices are converted to integer cents once, at import.
 3. Set the four environment variables above on the host.
-4. Build the storefront UI: read `/api/products`, then on "Checkout" call `POST /api/orders` and hand the returned `id` to the PayPal JS SDK (`createOrder: () => fetch("/api/orders", …)` — the guard test allows exactly that), then `POST /api/capture` on approval.
+4. Build the storefront UI: read `/api/products`, then on "Checkout" call `POST /api/orders` with a `clientKey` minted once per cart (`crypto.randomUUID()`) and hand the returned `id` to the PayPal JS SDK (`createOrder: () => fetch("/api/orders", …)` — the guard test allows exactly that), then `POST /api/capture` on approval.
 5. Flip `/shop/` from the coming-soon page to the storefront and update `test/shop.test.mjs` (it intentionally fails if a page builds a PayPal order in the browser).
 
 ## Automation
@@ -157,7 +157,7 @@ The home page's "Latest post" has the same blind spot one file over. `data/lates
 
 ```bash
 npm start          # http://localhost:8787 — the site and /api/* on one origin
-npm test           # node --test test/*.test.mjs (91 tests, no network)
+npm test           # node --test test/*.test.mjs (95 tests, no network)
 npm run check:freshness   # feed, /season.ics and the home page's latest post still current? (warn 14 days, fail 30)
 node db/seed.mjs --print --file products.json   # inspect seed rows without a database
 ```

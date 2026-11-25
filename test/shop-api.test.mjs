@@ -81,7 +81,7 @@ test("POST /api/orders prices from the database, never from the request", async 
     query: async (text, params) => {
       if (/from products/.test(text)) return [PRODUCTS[1]]; // server says $45.00
       inserts.push(params);
-      return [];
+      return /insert into orders/.test(text) ? [{ order_id: "order-1" }] : [];
     },
   };
   let sent;
@@ -101,6 +101,84 @@ test("POST /api/orders prices from the database, never from the request", async 
   assert.match(body.id, /PAYPAL-ORDER-1/);
   assert.ok(inserts.length === 1, "order recorded");
   assert.equal(inserts[0][2], 9000, "stored total is the server total");
+});
+
+test("a repeated clientKey returns the order that already exists, and never creates a second PayPal order", async () => {
+  const rows = [];
+  let soldOut = false;
+  const db = {
+    query: async (text, params) => {
+      if (/from products/.test(text)) return soldOut ? [] : [PRODUCTS[1]];
+      if (/^select id, paypal_order_id/.test(text)) return rows.filter((r) => r.id === params[0]);
+      if (/insert into orders/.test(text)) {
+        const row = { id: params[0], paypal_order_id: params[1], status: "created", total_cents: params[2], currency: params[3] };
+        rows.push(row);
+        return [{ order_id: row.id }];
+      }
+      return [];
+    },
+  };
+  let creates = 0;
+  const paypal = { create: async () => { creates++; return { id: "PAYPAL-ORDER-1" }; } };
+  const env = { DATABASE_URL: "postgres://u:p@db.test/neondb", SITE_ORIGIN: "https://site.test" };
+  const cart = { items: [{ sku: "rope-chain", qty: 2 }], clientKey: "cart-7f3c1a9e-2b" };
+
+  const first = await handleOrders(jsonReq("https://site.test/api/orders", cart), env, { db, paypal });
+  assert.equal(first.status, 201);
+  const created = await first.json();
+  assert.equal(created.reference, "cart-7f3c1a9e-2b", "the client key is the order reference");
+
+  // A retry lands on the existing order even once the piece is gone: pricing is skipped for a replay.
+  soldOut = true;
+  const second = await handleOrders(jsonReq("https://site.test/api/orders", cart), env, { db, paypal });
+  assert.equal(second.status, 200);
+  const again = await second.json();
+  assert.equal(again.id, created.id);
+  assert.equal(again.reference, created.reference);
+  assert.equal(again.totalCents, 9000);
+  assert.equal(again.replayed, true);
+  assert.equal(creates, 1, "a double tap never reaches PayPal twice");
+});
+
+test("a clientKey the server cannot key an order on is refused before PayPal", async () => {
+  let called = false;
+  const db = { query: async () => [PRODUCTS[1]] };
+  const paypal = { create: async () => { called = true; return { id: "X" }; } };
+  const res = await handleOrders(
+    jsonReq("https://site.test/api/orders", { items: [{ sku: "rope-chain", qty: 1 }], clientKey: "no spaces allowed" }),
+    { DATABASE_URL: "postgres://u:p@db.test/n" },
+    { db, paypal },
+  );
+  assert.equal(res.status, 400);
+  assert.equal((await res.json()).error, "bad_client_key");
+  assert.equal(called, false);
+});
+
+test("two requests with one clientKey that race the insert are answered with the stored order", async () => {
+  // The loser's insert is a no-op ('on conflict do nothing'), so it re-reads and replays the winner.
+  const stored = { id: "cart-race-000123", paypal_order_id: "PAYPAL-ORDER-WON", status: "created", total_cents: 9000, currency: "USD" };
+  let selects = 0;
+  const db = {
+    query: async (text, params) => {
+      if (/from products/.test(text)) return [PRODUCTS[1]];
+      if (/^select id, paypal_order_id/.test(text)) {
+        selects++;
+        return selects === 1 ? [] : params[0] === stored.id ? [stored] : [];
+      }
+      if (/insert into orders/.test(text)) return [];
+      return [];
+    },
+  };
+  const paypal = { create: async () => ({ id: "PAYPAL-ORDER-LOST" }) };
+  const res = await handleOrders(
+    jsonReq("https://site.test/api/orders", { items: [{ sku: "rope-chain", qty: 2 }], clientKey: "cart-race-000123" }),
+    { DATABASE_URL: "postgres://u:p@db.test/n" },
+    { db, paypal },
+  );
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.id, "PAYPAL-ORDER-WON", "answers with the order that was actually stored");
+  assert.equal(body.replayed, true);
 });
 
 test("POST /api/orders refuses cross-origin posts and non-JSON bodies", async () => {
