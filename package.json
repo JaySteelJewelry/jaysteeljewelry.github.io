@@ -13,6 +13,8 @@
     "check:freshness": "node scripts/freshness.mjs",
     "check:assets": "node scripts/asset-versions.mjs --check",
     "version:assets": "node scripts/asset-versions.mjs",
+    "check:sitemap": "node scripts/sitemap.mjs --check",
+    "sitemap": "node scripts/sitemap.mjs",
     "sync:events": "node scripts/sync-events.mjs",
     "season:ics": "node scripts/season-ics.mjs",
     "seed": "node db/seed.mjs",

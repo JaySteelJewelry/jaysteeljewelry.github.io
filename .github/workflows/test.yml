@@ -24,5 +24,7 @@ jobs:
         run: node --test test/
       - name: Every ?v= matches its asset
         run: npm run check:assets
+      - name: Sitemap dates match the shipped data
+        run: npm run check:sitemap
       - name: Season feed is valid
         run: npm run check:events

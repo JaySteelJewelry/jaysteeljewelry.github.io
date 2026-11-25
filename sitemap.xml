@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- The pages a search engine should index. /shop/ is a noindex coming-soon page and /jaysteel-hq/
-     is disallowed in robots.txt, so neither is listed here. test/asset-versions.test.mjs checks every
-     <loc> against the files in this repo. -->
+<!-- Written by scripts/sitemap.mjs from data/events.json and data/latest_post.json: each <lastmod>
+     is the day that page's own data says it changed, so it cannot go stale the way a typed date does.
+     /shop/ is noindex and /jaysteel-hq/ is disallowed in robots.txt, so neither is listed.
+     npm run sitemap rewrites this file; npm run check:sitemap fails when it is behind the data. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://jaysteeljewelry.github.io/</loc>
-    <lastmod>2026-11-25</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://jaysteeljewelry.github.io/links/</loc>
-    <lastmod>2026-11-25</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://jaysteeljewelry.github.io/circuit/</loc>
-    <lastmod>2026-11-25</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>

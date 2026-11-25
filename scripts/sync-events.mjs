@@ -7,6 +7,7 @@ import { writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { project } from "./feed-projection.mjs";
 import { seasonICS, readApproved } from "./season-ics.mjs";
+import { writeSitemap } from "./sitemap.mjs";
 
 const core = createRequire(import.meta.url)("../assets/events-core.js");
 const UPSTREAM =
@@ -34,6 +35,11 @@ try {
   const ics = seasonICS(publicFeed, readApproved());
   await writeFile(ICS, ics);
   console.log(`  wrote season.ics — ${(ics.match(/BEGIN:VEVENT/g) || []).length} public stops`);
+  // The sitemap is dated from the feed that was just written, so a new season moves <lastmod> in the
+  // same commit instead of waiting for somebody to remember the file exists.
+  const sitemap = writeSitemap();
+  const dates = sitemap.dates.map((d) => `${d.path} ${d.lastmod || "no date"}`).join(", ");
+  console.log(`  ${sitemap.changed ? "wrote" : "kept"} sitemap.xml — ${dates}`);
 } catch (err) {
   console.error(`✖ ${err.message}`);
   process.exitCode = 1;
