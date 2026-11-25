@@ -3,6 +3,10 @@
    answers, the season feed parses and carries no street address, each ?v= asset the home page asks for
    exists, a missing path is a 404, and the live home page is on this commit's asset version.
 
+   It also ages the live feed and the live calendar. A stale season is not a deploy failure — the site is
+   up and correct, just old — so those print as warnings (and GitHub annotations) rather than failing the
+   retry loop. The hard gate is .github/workflows/freshness.yml, which uses the same thresholds.
+
    Run by .github/workflows/smoke.yml after GitHub Pages publishes (and once a day), or by hand:
      node scripts/smoke.mjs
      SMOKE_ORIGIN=https://your-project.vercel.app node scripts/smoke.mjs
@@ -10,6 +14,7 @@
    check is retried a few times before the run is allowed to fail. */
 
 import { readFile } from "node:fs/promises";
+import { WARN_DAYS, ageDays, feedAsOf, seasonAsOf, todayET } from "./freshness.mjs";
 
 const ORIGIN = (process.env.SMOKE_ORIGIN || "https://jaysteeljewelry.github.io").replace(/\/+$/, "");
 const TRIES = Number(process.env.SMOKE_TRIES || 8);
@@ -17,6 +22,10 @@ const WAIT_MS = Number(process.env.SMOKE_WAIT_MS || 15000);
 const PAGES = ["/", "/links/", "/circuit/", "/shop/", "/404.html"];
 
 const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms));
+
+// Warnings, not failures: they describe an old season, not a broken deploy. Deduped across retries.
+const notes = [];
+const note = (message) => { if (!notes.includes(message)) notes.push(message); };
 
 async function get(path) {
   const res = await fetch(ORIGIN + path, { redirect: "follow", headers: { "cache-control": "no-cache" } });
@@ -26,6 +35,7 @@ async function get(path) {
 async function check() {
   const bad = [];
   const pages = {};
+  let liveFeedDay = "";
 
   for (const path of PAGES) {
     const r = await get(path);
@@ -46,6 +56,10 @@ async function check() {
     const events = json && (Array.isArray(json) ? json : json.events);
     if (!Array.isArray(events) || !events.length) bad.push("/data/events.json has no events");
     else if (!events.every((e) => e && e.id && e.date && e.city)) bad.push("an event is missing id, date or city");
+    // Parsing is not the same as current: a feed can be perfectly valid and months old.
+    liveFeedDay = feedAsOf(json);
+    const feedAge = ageDays(liveFeedDay, todayET());
+    if (Number.isFinite(feedAge) && feedAge > WARN_DAYS) note(`stale feed: the live data/events.json says updated ${liveFeedDay}, ${feedAge} days ago`);
   }
 
   // /season.ics is built beside the feed: it must be a real calendar and carry the same no-street rule.
@@ -54,6 +68,14 @@ async function check() {
   else if (!season.body.startsWith("BEGIN:VCALENDAR")) bad.push("/season.ics is not a calendar");
   else if (!/BEGIN:VEVENT/.test(season.body)) bad.push("/season.ics has no stops");
   else if (/\b\d{1,6}\s+[A-Z][\w']*\s+(?:Way|St|Ave|Rd|Blvd|Dr|Ln|Ct|Pl|Pkwy)\b/.test(season.body)) bad.push("/season.ics carries a street address");
+  else {
+    // A subscription that stopped being rebuilt keeps serving its last dates forever.
+    const built = seasonAsOf(season.body);
+    const icsAge = ageDays(built, todayET());
+    if (!built) note("the live /season.ics has no DTSTAMP, so its age cannot be checked");
+    else if (Number.isFinite(icsAge) && icsAge > WARN_DAYS) note(`stale calendar: the live /season.ics was built ${built}, ${icsAge} days ago`);
+    if (built && liveFeedDay && built < liveFeedDay) note(`the live /season.ics (${built}) lags the live feed (${liveFeedDay})`);
+  }
 
   // Every versioned asset the home page asks for must exist: a stale ?v= after a bump is a 404 for the site.
   const home = pages["/"].body || "";
@@ -82,6 +104,11 @@ for (let attempt = 1; attempt <= TRIES; attempt++) {
   try { bad = await check(); } catch (e) { bad = ["request failed: " + e.message]; }
   if (!bad.length) {
     console.log(`live site OK — ${ORIGIN}`);
+    for (const n of notes) {
+      console.log(`  ⚠ ${n}`);
+      if (process.env.GITHUB_ACTIONS) console.log(`::warning::${n}`);
+    }
+    if (!notes.length) console.log(`  fresh: the feed and the calendar are both under ${WARN_DAYS} days old`);
     process.exit(0);
   }
   if (attempt === TRIES) {

@@ -4,6 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { assess } from "../scripts/freshness.mjs";
 
 const R = new URL("..", import.meta.url).pathname;
 const rd = (f) => readFileSync(R + f, "utf8");
@@ -237,4 +238,68 @@ test("the worker tags cache answers so the footer cannot claim a sync", () => {
   assert.match(sw, /headers\.set\("X-Season-Source", "cache"\)/);
   assert.match(sw, /caches\.match\(req\)\.then\(stampCached\)/);
   assert.match(app, /headers\.get\("x-season-source"\) === "cache"/, "app reads the tag");
+});
+
+/* ---- freshness: a season that stopped moving must show up, not ship quietly ---------------------- */
+
+const freshFeed = (over = {}) => ({
+  updated: "2026-11-09",
+  timezone: "America/New_York",
+  events: [good()], // Riverside, 2026-12-13, booked + paid -> public
+  ...over,
+});
+const icsBuilt = (stamp, stops = 1) =>
+  [
+    "BEGIN:VCALENDAR",
+    ...Array.from({ length: stops }, (_, i) => ["BEGIN:VEVENT", `UID:${i}@example`, `DTSTAMP:${stamp}`, "END:VEVENT"]).flat(),
+    "END:VCALENDAR",
+  ].join("\r\n") + "\r\n";
+
+test("a season inside the warn window is quiet", () => {
+  const r = assess({ feed: freshFeed(), ics: icsBuilt("20261109T120000Z"), approved: { ids: [] }, today: "2026-11-18" });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.warnings, []);
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.facts.upcoming, 1);
+});
+
+test("an old feed warns first, then fails", () => {
+  const ics = icsBuilt("20261109T120000Z");
+  const warn = assess({ feed: freshFeed(), ics, approved: { ids: [] }, today: "2026-11-25" }); // 16 days
+  assert.equal(warn.ok, true, "two weeks plus is a warning, not a red build");
+  assert.match(warn.warnings.join(" "), /events\.json was last updated 16 days ago/);
+
+  const fail = assess({ feed: freshFeed(), ics, approved: { ids: [] }, today: "2026-12-10" }); // 31 days
+  assert.equal(fail.ok, false);
+  assert.match(fail.errors.join(" "), /shipping old dates/);
+  assert.match(fail.errors.join(" "), /calendar that never refreshes/);
+});
+
+test("a season.ics that stopped refreshing is an error, not a warning", () => {
+  const lag = assess({
+    feed: freshFeed({ updated: "2026-12-01" }),
+    ics: icsBuilt("20261109T120000Z"),
+    approved: { ids: [] },
+    today: "2026-12-02",
+  });
+  assert.equal(lag.ok, false);
+  assert.match(lag.errors.join(" "), /season\.ics is dated 2026-11-09 but the feed is 2026-12-01/);
+
+  const short = assess({ feed: freshFeed(), ics: icsBuilt("20261109T120000Z", 0), approved: { ids: [] }, today: "2026-11-10" });
+  assert.equal(short.ok, false);
+  assert.match(short.errors.join(" "), /lists 0 stop\(s\) but the feed has 1/);
+});
+
+test("a recent feed whose last stop has passed still fails", () => {
+  const feed = freshFeed({ updated: "2027-02-01", events: [good({ date: "2026-12-13" })] });
+  const r = assess({ feed, ics: icsBuilt("20270201T120000Z"), approved: { ids: [] }, today: "2027-02-05" });
+  assert.equal(r.ok, false);
+  assert.match(r.errors.join(" "), /no season left to show/);
+});
+
+test("the shipped feed and calendar agree right now", () => {
+  const feed = JSON.parse(rd("data/events.json"));
+  const r = assess({ feed, ics: rd("season.ics"), approved: JSON.parse(rd("data/approved_events.json")), today: "2026-11-25" });
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.facts.stops, r.facts.feedStops);
 });

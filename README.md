@@ -98,12 +98,15 @@ Every workflow is pinned to commit SHAs, and `test/security.test.mjs` fails the 
 | --- | --- | --- |
 | `test.yml` | every push to `main`, every PR | `node --test test/` + `npm run check:events`. GitHub Pages publishes `main` directly, so this is the gate. |
 | `feed-sync.yml` | daily, and on demand | `npm run sync:events`: pull the season feed, validate it, project it, rewrite `season.ics`, commit only when clean. |
-| `smoke.yml` | every push to `main`, daily, and on demand | `node scripts/smoke.mjs`: asks the live origin, not the repo — every page 200, the feed parses with `city` and no `address`, `season.ics` is a calendar with stops and no street, every `?v=` asset the home page asks for exists, a missing path is a 404, and the live home page is on the published commit's asset version. Triggered by the push itself (not by GitHub's internal Pages workflow name) and retries for ~2 min while Pages publishes. |
+| `freshness.yml` | every push to `main`, daily, and on demand | `npm run check:freshness`: is the season still current? Warns past 14 days without a feed update or a `season.ics` rebuild and fails past 30, fails when the calendar disagrees with the feed (different stop count, or an older `DTSTAMP`), and fails when the season has run out of dates. Runs half an hour after the feed sync. |
+| `smoke.yml` | every push to `main`, daily, and on demand | `node scripts/smoke.mjs`: asks the live origin, not the repo — every page 200, the feed parses with `city` and no `address`, `season.ics` is a calendar with stops and no street, every `?v=` asset the home page asks for exists, a missing path is a 404, and the live home page is on the published commit's asset version. Triggered by the push itself (not by GitHub's internal Pages workflow name) and retries for ~2 min while Pages publishes. It also ages the live feed and calendar and warns (annotated on the run) when either is older than two weeks. |
 | `shop-sync.yml` | every 30 min | POS → `shop/products.json`, skipped until the POS key is set. |
 
 **The feed is served from this repo.** `data/events.json` is a *projection*: only the fields the pages render (id, name, series, kind, status, paid, dates and times, venue, city) plus feed-level `updated`/`timezone`. Notes, fees, contacts, application state and next steps stay in the logistics repo — `scripts/feed-projection.mjs` is the single list, and `test/events-data.test.mjs` fails if anything else appears. Street addresses don't ship either: the sync turns the upstream `address` into `city` once, so the public file says `"Jacksonville, FL"` and nothing more.
 
 `npm run sync:events` does the same thing by hand (and is what the cron runs), with `EVENTS_SOURCE=<url>` to point at a different upstream. A failed validation writes nothing.
+
+**A stale season is not a broken one, which is why nothing used to notice it.** Every page keeps answering 200, `check:events` keeps saying the rows are well-formed, and `season.ics` stays byte-identical to a fresh build of the same old feed — the site just quietly keeps serving last month's dates, and a paused sync shows up as a calendar that never changes. `npm run check:freshness` (`scripts/freshness.mjs`) ages both shipped files: the feed's `updated` day and the newest `DTSTAMP` in `season.ics`, warning at 14 days and failing at 30 (`FRESH_WARN_DAYS` / `FRESH_FAIL_DAYS` override both). It also fails when the two disagree — the calendar lists a different number of stops than the feed, or is dated before it — and when a recent feed has run out of dates, so yesterday's markets cannot read as a new season. The thresholds live in one module, so `scripts/smoke.mjs` warns about the copy actually being served using the same numbers.
 
 `node scripts/smoke.mjs` runs the live check locally (`SMOKE_ORIGIN=…` for another host); it is what `smoke.yml` runs after a deploy. `npm run season:ics` rebuilds only the subscription (the sync does both).
 
@@ -111,7 +114,8 @@ Every workflow is pinned to commit SHAs, and `test/security.test.mjs` fails the 
 
 ```bash
 npm start          # http://localhost:8787 — the site and /api/* on one origin
-npm test           # node --test test/ (61 tests, no network)
+npm test           # node --test test/ (66 tests, no network)
+npm run check:freshness   # are the season feed and /season.ics still current? (warn 14 days, fail 30)
 node db/seed.mjs --print --file products.json   # inspect seed rows without a database
 ```
 
