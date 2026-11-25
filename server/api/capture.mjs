@@ -7,43 +7,19 @@
  * `paid` decrements stock, so two concurrent captures cannot take the same piece off the shelf twice.
  *
  * A capture PayPal has not completed — PENDING for an eCheck, DECLINED, FAILED — is refused before the
- * order is marked paid, so stock never leaves the shelf for money that has not arrived.
+ * order is marked paid, so stock never leaves the shelf for money that has not arrived. A PENDING
+ * capture is settled by PayPal's own webhook (POST /api/paypal-webhook) once PayPal completes it, which
+ * is why retrying a pending order is answered with a 409 here instead of being sent to PayPal to fail.
  *
- * A paid order queues an `order.paid` webhook (server/webhooks.mjs), keyed on our own reference. A
+ * A paid order queues an `order.paid` webhook (server/settlement.mjs), keyed on our own reference. A
  * retry of a capture that already went through queues it again under the same key: if the first
  * attempt could not reach Svix the event is recovered, and if it could, Svix collapses the duplicate,
  * so fulfilment still hears about money once.
  */
-import { amountToCents } from "../pricing.mjs";
 import { capturePayPalOrder, isPayPalConfigured, paypalConfig } from "../paypal.mjs";
 import { neonClient } from "../db.mjs";
 import { json, methodNotAllowed, readJson, sameOrigin } from "../http.mjs";
-import { WEBHOOK_EVENTS, sendWebhook } from "../webhooks.mjs";
-
-const MARK_PAID = `update orders set status = 'paid', capture_status = $2, paid_at = now() where id = $1 and status <> 'paid' returning id`;
-const DECREMENT_STOCK = `
-update products p
-   set stock = greatest(0, p.stock - i.qty)
-  from order_items i
- where i.order_id = $1 and p.sku = i.sku and p.stock is not null`;
-
-/**
- * Queue the paid event for an order. Safe to call again for the same order: the idempotency key is
- * derived from the order's own id, so a repeat collapses into the message already in Svix.
- *
- * @param {{id:unknown, total_cents:unknown}} order
- * @param {string} status the PayPal capture status
- * @param {Record<string,string|undefined>} env
- * @param {{svix?:any}} deps
- */
-async function announcePaid(order, status, env, deps) {
-  await sendWebhook(
-    WEBHOOK_EVENTS.orderPaid,
-    { reference: String(order.id), totalCents: Number(order.total_cents), status },
-    env,
-    { ...deps, idempotencyKey: `order-paid-${order.id}` },
-  );
-}
+import { announcePaid, markAmountMismatch, markCaptureStatus, settlePaid } from "../settlement.mjs";
 
 /**
  * @param {Request} req
@@ -77,6 +53,11 @@ export async function handleCapture(req, env = process.env, deps = {}) {
     await announcePaid(order, String(order.capture_status || "COMPLETED"), env, deps);
     return json({ ok: true, already: true });
   }
+  if (String(order.capture_status || "").toUpperCase() === "PENDING") {
+    // PayPal already has this capture in flight and refuses a second one. The webhook this route's
+    // sibling receives will mark the order paid; there is nothing for the buyer to retry.
+    return json({ error: "capture_not_completed", status: "PENDING", pending: true }, 409);
+  }
 
   const paypal = deps.paypal || {
     capture: (id) => capturePayPalOrder(paypalConfig(env), id),
@@ -93,30 +74,20 @@ export async function handleCapture(req, env = process.env, deps = {}) {
   // (COMPLETED), so this guard refuses an explicitly unpaid capture rather than inventing one.
   const captureStatus = String(captured.status || "").toUpperCase() || "COMPLETED";
   if (captureStatus !== "COMPLETED") {
-    // Keep the status on the row so a pending capture is visible, but change nothing else: no paid
-    // mark, no stock, no `order.paid`. `.catch` because failing to record it must not change the answer.
-    await db
-      .query(`update orders set capture_status = $2 where id = $1 and status = 'created'`, [order.id, captureStatus])
-      .catch(() => {});
+    await markCaptureStatus(db, order.id, captureStatus);
     return json({ error: "capture_not_completed", status: captureStatus }, 409);
   }
 
   if (captured.amountCents !== Number(order.total_cents)) {
-    await db.query(`update orders set status = 'amount_mismatch' where id = $1 and status <> 'paid'`, [order.id]).catch(() => {});
+    await markAmountMismatch(db, order.id);
     return json({ error: "amount_mismatch" }, 409);
   }
 
   try {
-    const marked = await db.query(MARK_PAID, [order.id, captureStatus]);
-    // Empty rows mean another request won the transition (`returning id` is what tells us); stock
-    // follows the win, so a concurrent or retried capture cannot take the piece off the shelf twice.
-    const won = Array.isArray(marked) ? marked.length > 0 : true;
-    if (won) await db.query(DECREMENT_STOCK, [order.id]);
+    await settlePaid(db, order, captureStatus, env, deps);
   } catch {
     return json({ error: "order_not_updated" }, 502);
   }
-
-  await announcePaid(order, captureStatus, env, deps);
 
   return json({ ok: true, status: captureStatus, totalCents: Number(order.total_cents) });
 }

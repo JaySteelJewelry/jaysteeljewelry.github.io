@@ -68,7 +68,8 @@ The static site cannot price an order, which is why the old checkout was removed
 | --- | --- |
 | `GET /api/products` | Public products from Postgres (display only). |
 | `POST /api/orders` | Body `{ items: [{ sku, qty }], clientKey }` — `clientKey` is optional, but a cart should send one. Re-reads every price from the database, computes the total in integer cents, creates the PayPal order server-side, records it. Returns `{ id, reference, totalCents }`. The same `clientKey` again returns the same order (`200`, `replayed: true`) instead of creating a second one: it is the order reference, the PayPal `paypal-request-id` and the `order.created` idempotency key, so a double tap is safe. |
-| `POST /api/capture` | Body `{ orderID }`. Captures the approved PayPal order. Refuses a capture PayPal did not complete (anything but `COMPLETED`: `409 capture_not_completed`, nothing marked paid), refuses an amount that differs from the recorded total, then marks it paid and decrements stock once. |
+| `POST /api/capture` | Body `{ orderID }`. Captures the approved PayPal order. Refuses a capture PayPal did not complete (anything but `COMPLETED`: `409 capture_not_completed`, nothing marked paid), refuses a retry of a capture that is still `PENDING` (`409`, `pending: true` — PayPal refuses a second capture; the webhook below settles it), refuses an amount that differs from the recorded total, then marks it paid and decrements stock once. |
+| `POST /api/paypal-webhook` | Called by PayPal, not by a browser. Signature-checked `PAYMENT.CAPTURE.*` events: a capture that completes after being `PENDING` marks the order paid, through the same path and the same `order.paid` idempotency key as a live capture. |
 | `POST /api/subscribe` | Body `{ email }`. Stores one lowercased address in `subscribers`, once; a repeat is a no-op and the answer is the same either way, so the route cannot be used to test membership. Cross-origin posts, non-JSON bodies and junk addresses are refused. |
 
 Rules enforced in `server/pricing.mjs`: integer cents only; unknown/inactive/out-of-stock items refused; ≤10 of one piece and ≤25 lines; mixed currencies refused; anything the browser says about price, name or total is ignored. `server/http.mjs` rejects cross-origin posts, non-JSON bodies and bodies over 8 KB.
@@ -82,6 +83,7 @@ Handlers speak standard `Request`/`Response`. `api/*.mjs` bridges them to Vercel
 | `DATABASE_URL` | server only | Neon Postgres connection string (never in the repo). |
 | `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` | server only | PayPal REST app credentials. |
 | `PAYPAL_ENV` | server only | `sandbox` (default) or `live`. |
+| `PAYPAL_WEBHOOK_ID` | server only | The id of the PayPal webhook pointing at `/api/paypal-webhook`. Empty closes that route (503) rather than trusting an unsigned body. |
 | `SITE_ORIGIN` | server only | e.g. `https://your-project.vercel.app` — the only origin allowed to post orders. |
 | `SVIX_API_KEY` | server only | Svix API token for outbound webhooks (see below). Empty keeps every webhook silent. |
 | `SVIX_APP_ID` | server only | Optional. An existing Svix application id; empty uses/creates the `jaysteeljewelry` app. |
@@ -102,7 +104,7 @@ inside the handler would have lost it.
 | --- | --- | --- |
 | `subscriber.created` | `POST /api/subscribe` inserts an address it did not already have | `{ email, source, subscribedAt }` |
 | `order.created` | `POST /api/orders` recorded the order | `{ reference, totalCents, currency, items: [{ sku, qty, unitCents }] }` |
-| `order.paid` | `POST /api/capture` marked the order paid and decremented stock | `{ reference, totalCents, status }` |
+| `order.paid` | `POST /api/capture` or the inbound PayPal webhook marked the order paid and decremented stock | `{ reference, totalCents, status }` |
 
 Sending is best-effort by design: a Svix error (or a checkout with no `node_modules`) is logged and the
 visitor's request still succeeds, because the subscriber is stored and the money is captured either way.
@@ -119,13 +121,34 @@ the Svix dashboard (or API), and verify the signature with the endpoint secret S
 
 `test/webhooks.test.mjs` covers the wiring with a fake Svix client — no network involved.
 
+### PayPal talks back — the inbound capture webhook
+
+`POST /api/paypal-webhook` is the one route that receives instead of sends. A capture PayPal answers
+with `PENDING` (an eCheck, a payment under review) is money that has not arrived, so `/api/capture`
+refuses it — and PayPal refuses a second capture of the same order, so a buyer's retry cannot help. When
+PayPal later completes that capture it delivers `PAYMENT.CAPTURE.COMPLETED`, and this route settles the
+order through the same path a live capture uses (`server/settlement.mjs`): the paid transition is won
+once, stock follows the win, and `order.paid` is queued under `order-paid-<id>`, so a delivery PayPal
+repeats changes nothing.
+
+The body is authenticated, never trusted. The `PAYPAL-TRANSMISSION-*` headers and the parsed event are
+checked against PayPal's `/v1/notifications/verify-webhook-signature` with `PAYPAL_WEBHOOK_ID`;
+anything that is not an explicit `SUCCESS` gets `401` and touches no order. `PAYMENT.CAPTURE.DENIED`
+records the refusal and leaves the order retryable, money for the wrong amount is marked
+`amount_mismatch` for a human instead of shipping, and an unknown order or any other event type is
+acknowledged with `200` so PayPal stops repeating it. With no `PAYPAL_WEBHOOK_ID`, the route answers
+`503` rather than accepting an unverified body.
+
+`test/paypal-webhook.test.mjs` covers the guards with a fake verifier and a fake Svix client.
+
 ### Reopening the shop — the go-live checklist
 
 1. `psql "$DATABASE_URL" -f db/schema.sql` — create `products`, `orders`, `order_items` and `subscribers`.
 2. Put real prices in the table: `node db/seed.mjs --file products.json` (or `--print` first to inspect the rows). Prices are converted to integer cents once, at import.
-3. Set the four environment variables above on the host.
-4. Build the storefront UI: read `/api/products`, then on "Checkout" call `POST /api/orders` with a `clientKey` minted once per cart (`crypto.randomUUID()`) and hand the returned `id` to the PayPal JS SDK (`createOrder: () => fetch("/api/orders", …)` — the guard test allows exactly that), then `POST /api/capture` on approval.
-5. Flip `/shop/` from the coming-soon page to the storefront and update `test/shop.test.mjs` (it intentionally fails if a page builds a PayPal order in the browser).
+3. Set the environment variables above on the host.
+4. In the PayPal dashboard, add a webhook at `https://<your-domain>/api/paypal-webhook` subscribed to `PAYMENT.CAPTURE.COMPLETED` and `PAYMENT.CAPTURE.DENIED`, and set its id as `PAYPAL_WEBHOOK_ID`. Without it, a `PENDING` capture (an eCheck) never becomes paid.
+5. Build the storefront UI: read `/api/products`, then on "Checkout" call `POST /api/orders` with a `clientKey` minted once per cart (`crypto.randomUUID()`) and hand the returned `id` to the PayPal JS SDK (`createOrder: () => fetch("/api/orders", …)` — the guard test allows exactly that), then `POST /api/capture` on approval.
+6. Flip `/shop/` from the coming-soon page to the storefront and update `test/shop.test.mjs` (it intentionally fails if a page builds a PayPal order in the browser).
 
 ## Automation
 
@@ -157,7 +180,7 @@ The home page's "Latest post" has the same blind spot one file over. `data/lates
 
 ```bash
 npm start          # http://localhost:8787 — the site and /api/* on one origin
-npm test           # node --test test/*.test.mjs (95 tests, no network)
+npm test           # node --test test/*.test.mjs (107 tests, no network)
 npm run check:freshness   # feed, /season.ics and the home page's latest post still current? (warn 14 days, fail 30)
 node db/seed.mjs --print --file products.json   # inspect seed rows without a database
 ```

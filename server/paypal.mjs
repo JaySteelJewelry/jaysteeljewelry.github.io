@@ -9,7 +9,7 @@ import { amountToCents, centsToAmount } from "./pricing.mjs";
 
 /**
  * @param {Record<string, string|undefined>} env
- * @returns {{clientId:string, clientSecret:string, base:string, brandName:string}}
+ * @returns {{clientId:string, clientSecret:string, base:string, brandName:string, webhookId:string}}
  */
 export function paypalConfig(env) {
   const clientId = env.PAYPAL_CLIENT_ID || "";
@@ -20,6 +20,9 @@ export function paypalConfig(env) {
     clientSecret,
     base: live ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com",
     brandName: env.PAYPAL_BRAND_NAME || "JAY STEEL JEWELRY",
+    // The id of the webhook configured in the PayPal dashboard. Empty means inbound deliveries are
+    // refused: without it there is nothing to check a signature against.
+    webhookId: String(env.PAYPAL_WEBHOOK_ID || "").trim(),
   };
 }
 
@@ -109,6 +112,41 @@ export async function createPayPalOrder(cfg, priced, opts = {}, fetchImpl = fetc
   const data = await res.json();
   if (!data || !data.id) throw new Error("paypal order returned no id");
   return { id: String(data.id) };
+}
+
+/**
+ * Ask PayPal whether an inbound delivery really came from it.
+ *
+ * The signature is the only authentication a webhook has, so an unverifiable body must never let the
+ * caller change an order: anything but an explicit SUCCESS is false.
+ *
+ * @param {ReturnType<typeof paypalConfig>} cfg
+ * @param {Headers} headers the PAYPAL-TRANSMISSION-* headers, untouched
+ * @param {unknown} event the parsed body, exactly as received
+ * @param {typeof fetch} [fetchImpl]
+ * @returns {Promise<boolean>}
+ */
+export async function verifyPayPalWebhook(cfg, headers, event, fetchImpl = fetch) {
+  if (!cfg.webhookId) return false;
+  const token = await accessToken(cfg, fetchImpl);
+  // Not `verify-webhook-id`: that name is not PayPal's. The documented endpoint (and the only one that
+  // returns verification_status) is verify-webhook-signature.
+  const res = await fetchImpl(`${cfg.base}/v1/notifications/verify-webhook-signature`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      auth_algo: headers.get("paypal-auth-algo") || "",
+      cert_url: headers.get("paypal-cert-url") || "",
+      transmission_id: headers.get("paypal-transmission-id") || "",
+      transmission_sig: headers.get("paypal-transmission-sig") || "",
+      transmission_time: headers.get("paypal-transmission-time") || "",
+      webhook_id: cfg.webhookId,
+      webhook_event: event,
+    }),
+  });
+  if (!res.ok) return false;
+  const data = await res.json().catch(() => null);
+  return Boolean(data && data.verification_status === "SUCCESS");
 }
 
 /**

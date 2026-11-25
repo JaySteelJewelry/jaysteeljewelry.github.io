@@ -19,12 +19,15 @@ export function json(body, status = 200, headers = {}) {
 
 export const MAX_BODY_BYTES = 8192;
 
-/** @param {Request} req */
-export async function readJson(req) {
+/**
+ * @param {Request} req
+ * @param {number} [maxBytes] raised for a host callback whose body we do not shape (PayPal's events)
+ */
+export async function readJson(req, maxBytes = MAX_BODY_BYTES) {
   const type = (req.headers.get("content-type") || "").toLowerCase();
   if (!type.startsWith("application/json")) return { error: json({ error: "unsupported_media_type" }, 415) };
   const raw = await req.text();
-  if (raw.length > MAX_BODY_BYTES) return { error: json({ error: "payload_too_large" }, 413) };
+  if (raw.length > maxBytes) return { error: json({ error: "payload_too_large" }, 413) };
   try {
     return { body: JSON.parse(raw) };
   } catch {

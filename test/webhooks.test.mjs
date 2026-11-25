@@ -172,6 +172,21 @@ test("a capture PayPal has not completed is refused: no paid mark, no stock, no 
   assert.equal(svix.sent.filter((c) => c.kind === "message").length, 0, "no order.paid for money that did not arrive");
 });
 
+test("a retry of a pending capture is answered without asking PayPal to capture it again", async () => {
+  const svix = fakeSvix();
+  const db = {
+    query: async (text) => {
+      if (/select id, total_cents/.test(text)) return [{ id: "order-1", total_cents: 9000, status: "created", capture_status: "PENDING" }];
+      throw new Error(`a pending capture must not write: ${text}`);
+    },
+  };
+  const paypal = { capture: async () => { throw new Error("PayPal refuses a second capture of a pending order"); } };
+  const res = await handleCapture(captureReq(), ENV, { db, paypal, svix });
+  assert.equal(res.status, 409, "not a 502: the money is on its way and the webhook will settle it");
+  assert.deepEqual(await res.json(), { error: "capture_not_completed", status: "PENDING", pending: true });
+  assert.equal(svix.sent.length, 0, "nothing is announced for money that has not arrived");
+});
+
 test("a retried capture writes nothing, and re-queues order.paid under the same key", async () => {
   const svix = fakeSvix();
   const db = {
