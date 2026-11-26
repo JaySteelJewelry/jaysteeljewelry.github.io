@@ -113,13 +113,13 @@ const captureReq = () =>
 
 test("a capture that marks the order paid decrements stock once and queues one event", async () => {
   const svix = fakeSvix();
-  const stock = [];
+  const writes = [];
   let markParams;
   const db = {
     query: async (text, params) => {
       if (/select id, total_cents/.test(text)) return [{ id: "order-1", total_cents: 9000, status: "created", capture_status: null }];
+      writes.push({ text, params });
       if (/update orders set status = 'paid'/.test(text)) { markParams = params; return [{ id: "order-1" }]; }
-      stock.push(text);
       return [];
     },
   };
@@ -127,8 +127,8 @@ test("a capture that marks the order paid decrements stock once and queues one e
   const res = await handleCapture(captureReq(), ENV, { db, paypal, svix });
   assert.equal(res.status, 200);
   assert.deepEqual(markParams, ["order-1", "COMPLETED"], "PayPal's status is recorded with the paid row");
-  assert.equal(stock.length, 1, "one stock write");
-  assert.match(stock[0], /set stock = greatest/);
+  assert.equal(writes.length, 1, "one write: the paid mark and the stock move are the same statement");
+  assert.match(writes[0].text, /set stock = greatest/, "stock moves in the statement that marks the order paid");
   const messages = svix.sent.filter((c) => c.kind === "message");
   assert.equal(messages.length, 1);
   assert.equal(messages[0].message.eventType, "order.paid");
@@ -137,19 +137,20 @@ test("a capture that marks the order paid decrements stock once and queues one e
 
 test("a capture that loses the paid transition does not decrement stock a second time", async () => {
   const svix = fakeSvix();
-  const stock = [];
+  const writes = [];
   const db = {
     query: async (text) => {
       if (/select id, total_cents/.test(text)) return [{ id: "order-1", total_cents: 9000, status: "created" }];
+      writes.push(text);
       if (/update orders set status = 'paid'/.test(text)) return []; // another request already won it
-      stock.push(text);
       return [];
     },
   };
   const paypal = { capture: async () => ({ status: "COMPLETED", amountCents: 9000 }) };
   const res = await handleCapture(captureReq(), ENV, { db, paypal, svix });
   assert.equal(res.status, 200);
-  assert.deepEqual(stock, [], "no stock write without the transition");
+  assert.equal(writes.length, 1, "nothing follows the transition statement");
+  assert.match(writes[0], /set stock = greatest/, "and the only stock move is the one inside it, which matched no row");
 });
 
 test("a capture PayPal has not completed is refused: no paid mark, no stock, no event", async () => {

@@ -115,6 +115,7 @@ test("a completed capture marks the order paid, moves stock once and queues orde
   assert.deepEqual(await res.json(), { ok: true, already: false });
   const mark = db.calls.find((c) => /update orders set status = 'paid'/.test(c.text));
   assert.deepEqual(mark.params, [ORDER_ID, "COMPLETED"], "found by our own reference, recorded as PayPal's status");
+  assert.match(mark.text, /set stock = greatest/, "the stock move is in the same statement, so one cannot commit without the other");
   assert.equal(db.calls.filter((c) => /set stock = greatest/.test(c.text)).length, 1, "one stock write");
 
   const messages = svix.sent.filter((c) => c.kind === "message");
@@ -133,10 +134,60 @@ test("a redelivered capture changes nothing the second time", async () => {
 
   assert.equal(res.status, 200);
   assert.deepEqual(await res.json(), { ok: true, already: true });
-  assert.equal(db.calls.filter((c) => /set stock = greatest/.test(c.text)).length, 0, "stock does not move twice");
+  assert.equal(db.calls.length, 2, "a lookup and one settlement statement: nothing else writes");
+  assert.match(db.calls[1].text, /set stock = greatest/, "the only stock move is inside the statement that matched no row");
   const messages = svix.sent.filter((c) => c.kind === "message");
   assert.equal(messages.length, 1);
   assert.equal(messages[0].options.idempotencyKey, `order-paid-${ORDER_ID}`, "the same key swallows the duplicate");
+});
+
+/**
+ * A database that behaves like the real one: the paid transition and the stock write are one
+ * statement, so a failure inside it applies neither. `failOnce` makes the first attempt fail at that
+ * statement, which is the failure a split mark-then-decrement could not recover from.
+ */
+function settleDb(order, { failOnce = false } = {}) {
+  const state = { status: order.status, stockWrites: 0, attempts: 0 };
+  let fail = failOnce;
+  return {
+    state,
+    query: async (text, params) => {
+      if (/from orders where (id|paypal_order_id) = \$1/.test(text)) return [{ ...order, status: state.status }];
+      if (/update orders set status = 'paid'/.test(text)) {
+        state.attempts += 1;
+        if (fail) {
+          fail = false;
+          throw new Error("stock write failed inside the settlement statement");
+        }
+        if (state.status === "paid") return [];
+        state.status = "paid";
+        if (/set stock = greatest/.test(text)) state.stockWrites += 1;
+        return [{ id: params[0] }];
+      }
+      return [];
+    },
+  };
+}
+
+test("a stock write that fails leaves the order unpaid, so a retry settles it", async () => {
+  const svix = fakeSvix();
+  const db = settleDb(ORDER, { failOnce: true });
+
+  const first = await handlePayPalWebhook(post(captureEvent()), ENV, { db, paypal: verifier, svix });
+  assert.equal(first.status, 503, "PayPal is told to deliver the event again");
+  assert.equal(db.state.status, "created", "the paid mark rolled back with the stock write");
+  assert.equal(svix.sent.length, 0, "nothing is announced for an order that is not paid");
+
+  const retry = await handlePayPalWebhook(post(captureEvent()), ENV, { db, paypal: verifier, svix });
+  assert.equal(retry.status, 200);
+  assert.deepEqual(await retry.json(), { ok: true, already: false }, "the retry wins the transition it could not finish");
+  assert.equal(db.state.status, "paid");
+  assert.equal(db.state.stockWrites, 1, "the retry moves the stock the failed attempt could not");
+  assert.equal(svix.sent.filter((c) => c.kind === "message").length, 1);
+
+  const again = await handlePayPalWebhook(post(captureEvent()), ENV, { db, paypal: verifier, svix });
+  assert.deepEqual(await again.json(), { ok: true, already: true });
+  assert.equal(db.state.stockWrites, 1, "a further redelivery does not move it twice");
 });
 
 test("money for the wrong amount is recorded as a mismatch, never as paid", async () => {

@@ -11,16 +11,27 @@
 import { WEBHOOK_EVENTS, sendWebhook } from "./webhooks.mjs";
 
 /**
+ * The paid mark and the stock move are one statement, so they commit together or not at all. As two
+ * statements, a failed stock write left the order paid and the shelf untouched, and every later retry
+ * saw `paid` and skipped stock for good. A single rolled-back statement leaves the order `created`,
+ * which is exactly the state a retry can repair.
+ *
  * `returning id` is the point: an empty result means this request lost the transition to another one
- * (a retried capture, a webhook redelivery), so it must not move stock.
+ * (a retried capture, a webhook redelivery), so it must not move stock. The stock update reads `won`,
+ * so it moves only for the write that made the transition.
  */
-export const MARK_PAID = `update orders set status = 'paid', capture_status = $2, paid_at = now() where id = $1 and status <> 'paid' returning id`;
-
-const DECREMENT_STOCK = `
-update products p
-   set stock = greatest(0, p.stock - i.qty)
-  from order_items i
- where i.order_id = $1 and p.sku = i.sku and p.stock is not null`;
+export const MARK_PAID = `
+with won as (
+  update orders set status = 'paid', capture_status = $2, paid_at = now()
+   where id = $1 and status <> 'paid'
+  returning id
+), moved as (
+  update products p set stock = greatest(0, p.stock - i.qty)
+    from order_items i, won
+   where i.order_id = won.id and p.sku = i.sku and p.stock is not null
+  returning p.sku
+)
+select id from won`;
 
 /**
  * Queue the paid event for an order. Safe to call again for the same order: the idempotency key is
@@ -41,7 +52,7 @@ export async function announcePaid(order, status, env = process.env, deps = {}) 
 }
 
 /**
- * Mark an order paid, move stock for the winner only, and announce it.
+ * Mark an order paid and move stock for the winner only (one statement, see MARK_PAID), then announce it.
  *
  * @param {{query:(text:string,params?:unknown[])=>Promise<Record<string,unknown>[]>}} db
  * @param {{id:unknown, total_cents:unknown}} order
@@ -53,7 +64,6 @@ export async function announcePaid(order, status, env = process.env, deps = {}) 
 export async function settlePaid(db, order, status, env = process.env, deps = {}) {
   const marked = await db.query(MARK_PAID, [order.id, status]);
   const won = Array.isArray(marked) ? marked.length > 0 : true;
-  if (won) await db.query(DECREMENT_STOCK, [order.id]);
   await announcePaid(order, status, env, deps);
   return { won };
 }

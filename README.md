@@ -112,7 +112,9 @@ A repeat signup is not an event, and each message carries an idempotency key der
 reference, so a retried request cannot deliver the same event twice. Retries are safe in both
 directions: a capture that is retried after it already went through queues `order.paid` again under the
 same key, so an event whose first send never reached Svix is recovered, and one that did is collapsed
-instead of announced twice; only the request that actually moves the order to `paid` decrements stock.
+instead of announced twice; only the request that actually moves the order to `paid` decrements stock,
+and both happen in one statement, so a stock write that fails rolls the paid mark back and leaves the
+order for a retry rather than paid and never taken off the shelf.
 If `SVIX_API_KEY` is set but
 `SVIX_APP_ID` is not, the first event asks Svix for the `jaysteeljewelry` application
 (`application.getOrCreate`) — one key is enough to start. Subscribe an endpoint to those event types in
@@ -127,9 +129,10 @@ the Svix dashboard (or API), and verify the signature with the endpoint secret S
 with `PENDING` (an eCheck, a payment under review) is money that has not arrived, so `/api/capture`
 refuses it — and PayPal refuses a second capture of the same order, so a buyer's retry cannot help. When
 PayPal later completes that capture it delivers `PAYMENT.CAPTURE.COMPLETED`, and this route settles the
-order through the same path a live capture uses (`server/settlement.mjs`): the paid transition is won
-once, stock follows the win, and `order.paid` is queued under `order-paid-<id>`, so a delivery PayPal
-repeats changes nothing.
+order through the same path a live capture uses (`server/settlement.mjs`): the paid transition and the
+stock move are one statement won once, `order.paid` is queued under `order-paid-<id>`, and a failed
+write leaves the order unpaid so PayPal's redelivery settles it — so a delivery PayPal repeats changes
+nothing.
 
 The body is authenticated, never trusted. The `PAYPAL-TRANSMISSION-*` headers and the parsed event are
 checked against PayPal's `/v1/notifications/verify-webhook-signature` with `PAYPAL_WEBHOOK_ID`;
